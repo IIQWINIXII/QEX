@@ -1,0 +1,27 @@
+.MainLayout{
+    height: 100%;
+}
+.TopBarDiv{
+    height: 32px
+}
+.MainDiv {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    height: 100%-32px;
+}
+
+.SideBarDiv {
+    width: 100%;
+    box-sizing: border-box;
+    grid-column: 1;
+    border-color: black;
+    border: 1px solid;
+    height: 100%;
+}
+
+.ExtensionLayout{
+    border-color: black;
+    border: 1px solid;
+    grid-column: 2;
+    height: 100%;
+}

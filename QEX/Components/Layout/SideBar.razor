@@ -1,0 +1,78 @@
+﻿@using QEX.Components.Layout;
+@using QEX.Abstractions.Interface;
+@using QEX.Components.Extensions.Base;
+@inject IExtensionService ExtensionService
+
+    <div class="SideBar" style="display:flex; flex-direction:column;">
+        <button @onclick="ExpandSideBarMenu">
+            @if (IsMenuOpen)
+            {
+                <span>X</span>
+            }
+            else
+            {
+                <span>III</span>
+            }
+        </button>
+        @if (IsMenuOpen)
+        {
+            <div class="MenuContainer" style="display: flex; flex-direction:column">
+                <div class="AccoutSelection">
+                    <div class="CurrentAccount">
+                    </div>
+                </div>
+                <button  id="0" class="UserProfileOpenBut" 
+                    @onclick=ExpandProfileFrame>
+                    <span>Profile</span>
+                </button>
+                <button id="1" class="UserExtensionsOpenBut">
+                    <span>Extesions</span>
+                </button>
+                <button  id="2" class="UserOptionsOpenBut" 
+                    @onclick=ExpandOptionsFrame>
+                    <span>Options</span>
+                </button>
+            </div>
+        }
+    </div>
+
+
+
+@code {
+
+    bool IsMenuOpen { get; set; } = false;
+    public bool ShowSideBar()
+    {
+        return false;
+    }
+    private void ExpandSideBarMenu()
+    {
+        IsMenuOpen = !IsMenuOpen;
+    }
+    private void ExpandExtensionFrame()
+    {
+        // frameExtesionsIsOpen ////
+    }
+
+    private void ExpandOptionsFrame()
+    {
+        ExtensionService.CloseExtension();
+        var parameters = new Dictionary<string, object>
+        {
+
+        };
+
+        ExtensionService.OpenExtension<UserOptionsExtension>(parameters);
+    }
+    private void ExpandProfileFrame()
+    {
+        ExtensionService.CloseExtension();
+
+        var parameters = new Dictionary<string, object>
+        {
+        };
+
+        ExtensionService.OpenExtension<UserProfileExtension>(parameters);
+    }
+
+}

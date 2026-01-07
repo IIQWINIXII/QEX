@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="QEX/QEX.csproj">
+    <Deploy Solution="Debug|*" />
+  </Project>
+  <Project Path="QEX_Lib/QEX_Lib.csproj" />
+  <Project Path="QEX_Server/QEX_Server.csproj" />
+</Solution>

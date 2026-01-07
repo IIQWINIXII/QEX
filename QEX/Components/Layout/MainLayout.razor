@@ -1,0 +1,25 @@
+﻿@inherits LayoutComponentBase
+@using QEX.Abstractions.Interface;
+@using QEX.Abstractions.Service;
+@using QEX.Components.Pages;
+@using QEX.Components.Layout;
+@using QEX.Components.Extensions.Base;
+@inject IExtensionService ExtensionService
+
+<div class="MainLayout">
+    <div class="TopBarDiv">
+        <TopBar></TopBar>
+    </div>
+    <div class="MainDiv">
+        <div class="SideBarDiv">
+            <SideBar></SideBar>
+        </div>
+        <div class="ExtensionLayout">
+            <ExtensionDiv ExtensionTitle="Profile" Position="right"
+                          Width="350" Height="300"></ExtensionDiv>
+        </div>
+    </div>
+</div>
+
+@code{
+}
