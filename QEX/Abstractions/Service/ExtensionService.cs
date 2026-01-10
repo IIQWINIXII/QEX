@@ -36,11 +36,8 @@ namespace QEX.Abstractions.Service
 
         public void OpenExtension(Type ComponentType, Dictionary<string, object>? Parameters = null)
         {
-            if (ComponentType == null)
-                throw new ArgumentException("Type is not ComponentBase");
-
-            CurrentComponentType = ComponentType;
-            CurrentParameters = Parameters ?? new Dictionary<string, object>();
+            CurrentComponentType = ComponentType ?? throw new("Type is not ComponentBase");
+            CurrentParameters = Parameters ?? [];
             IsVisible = true;
 
             OnOpenExtension?.Invoke(ComponentType, CurrentParameters);

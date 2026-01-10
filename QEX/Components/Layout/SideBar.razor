@@ -21,7 +21,7 @@
                     <div class="CurrentAccount">
                     </div>
                 </div>
-                <button  id="0" class="UserProfileOpenBut" 
+                <button  id="0" class="ButtonStyle"
                     @onclick=ExpandProfileFrame>
                     <span>Profile</span>
                 </button>
@@ -39,8 +39,8 @@
 
 
 @code {
-
     bool IsMenuOpen { get; set; } = false;
+
     public bool ShowSideBar()
     {
         return false;
@@ -59,7 +59,6 @@
         ExtensionService.CloseExtension();
         var parameters = new Dictionary<string, object>
         {
-
         };
 
         ExtensionService.OpenExtension<UserOptionsExtension>(parameters);

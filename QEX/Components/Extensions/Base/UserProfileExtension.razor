@@ -1,18 +1,26 @@
-﻿
+﻿@using QEX_Lib.ClientDB.Model;
 <div class="ProfileExtension">
     <div class="TopInfoUser">
         <div class="BacgroundTopProfile"> 
             <div class="ActiveAvatarUser">
-                asd
+                <div class="AvatarContainer">
+                    @if (User.CurrentAvatarID > 0)
+                    {
+                        <img src="@UserAvatarList.
+                            GetImageFromBase64ByID(User.CurrentAvatarID)" 
+                            class="AvatarImage" />
+                    }
+                </div>
             </div>
             <div class="ActiveNameUser">
-                asd
+                <span>@User.Name</span>
             </div>
         </div>
     </div>
     <div class="AllInfoUser">
         <div class="StaticUserInf">
-
+            <span>@User.Login</span>
+            <span>@User.Email</span>
         </div>
         <div class="CustomUserInfo">
 
@@ -22,4 +30,12 @@
 
 @code {
     [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public User User { get; set; } = new();
+    public UserAvatarList UserAvatarList { get; set; } = new();
+
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+    }
 }

@@ -4,22 +4,49 @@
 @using QEX.Components.Pages;
 @using QEX.Components.Layout;
 @using QEX.Components.Extensions.Base;
+@using QEX_Lib.ClientDB.Model;
+@using QEX_Lib.ClientDB;
+
 @inject IExtensionService ExtensionService
 
 <div class="MainLayout">
-    <div class="TopBarDiv">
-        <TopBar></TopBar>
-    </div>
-    <div class="MainDiv">
-        <div class="SideBarDiv">
-            <SideBar></SideBar>
+    @if (UserList.Items.Count > 0)
+    {
+        <div class="TopBarDiv">
+            <TopBar></TopBar>
         </div>
-        <div class="ExtensionLayout">
-            <ExtensionDiv ExtensionTitle="Profile" Position="right"
-                          Width="350" Height="300"></ExtensionDiv>
+        <div class="MainDiv">
+            <div class="SideBarDiv">
+                <SideBar></SideBar>
+            </div>
+            <div class="ExtensionLayout">
+                <ExtensionDiv ></ExtensionDiv>
+            </div>
         </div>
-    </div>
+    }
+    else
+    {
+        <div class="MainLayout">
+            <AuthLayout OnUserLoggedIn="AddUserLoggedIn"></AuthLayout>
+        </div>
+    }
+    
 </div>
 
 @code{
+    ClientContext clientContext = ClientContext.Create();
+    [CascadingParameter] public UserList UserList { get; set; } = new();
+
+    protected override void OnInitialized()
+    {
+        UserList.Load(clientContext);
+       
+        base.OnInitialized();
+    }
+    public void AddUserLoggedIn(User user)
+    {
+        UserList.Items.Add(user);
+        UserList.Save(clientContext); 
+        StateHasChanged();
+    }
 }

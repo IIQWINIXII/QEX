@@ -5,9 +5,6 @@
 <div class="ExtensionContainer">
     @if (ExtensionService.IsVisible && ExtensionService.CurrentComponentType != null)
     {
-        <div class="ExtensionsHeader">
-            @ExtensionTitle
-        </div>
         <div class="ExtensionCaption">
             @{
                 var parameters = ExtensionService.CurrentParameters ??
@@ -22,11 +19,6 @@
 </div>
 
 @code {
-    [Parameter] public string ExtensionTitle { get; set; } = "Base";
-    [Parameter] public string Position { get; set; } = "left";
-    [Parameter] public string Width { get; set; } = "auto";
-    [Parameter] public string Height { get; set; } = "auto";
-
     protected override void OnInitialized()
     {
         ExtensionService.OnOpenExtension += (type, parameters) => StateHasChanged();

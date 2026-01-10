@@ -1,0 +1,50 @@
+.AuthLayout {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    align-self: center;
+    height: 100%;
+    background: linear-gradient(135deg, #5A0FC8 0%, #1DBF73 100%);
+}
+.AuthDiv {
+    justify-content: center;
+    align-items: center;
+    align-self: center;
+    height: 400px;
+    width: 550px;
+    background-color: #ffffff60;
+    border: 2px solid #ededed80;
+    border-radius: 25px;
+}
+
+.AuthInputDiv {
+    height: calc(90% - 2px);
+    width: calc(100% - 2px);
+}
+
+.AuthInput {
+    font-size: 20px;
+    border-radius: 5px;
+    width: calc(100% - 20px);
+    margin: 10px 10px 10px 10px;
+    border: 0;
+}
+
+.AuthButtonDiv {
+    display: flex;
+}
+
+.AuthActiveButton {
+    margin: 0px 10px 0px 10px;
+    width: 70%;
+    border-radius: 5px 5px 5px 15px;
+    border: 0;
+    height: 30px;
+}
+.AuthUnActiveButton {
+    margin: 0px 10px 0px 0px;
+    border: 0;
+    border-radius: 5px 5px 15px 5px;
+    width: 30%;
+    height: 30px;
+}

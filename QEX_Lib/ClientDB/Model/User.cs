@@ -16,7 +16,7 @@ namespace QEX_Lib.ClientDB.Model
         public string? Name { get; set; }
         [MaxLength(128)]
         public string? Login { get; set; }
-        public byte[] CurrentAvatar { get; set; } = [];
+        public int CurrentAvatarID { get; set; }
         [MaxLength(128)]
         public string? Password { get; set; }
         [EmailAddress]
@@ -28,6 +28,22 @@ namespace QEX_Lib.ClientDB.Model
         public void Load(ClientContext context)
         {
 
+        }
+    }
+    public class UserList : IBaseModelList
+    {
+        public List<User> Items { get; set; } = new List<User>();
+        public void Load(ClientContext context)
+        {
+            Items = context.Users.Select(u => u).ToList();
+        }
+        public void Save(ClientContext context)
+        {
+            
+        }
+        public void Delete(ClientContext context)
+        {
+            throw new NotImplementedException();
         }
     }
 }

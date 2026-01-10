@@ -90,3 +90,12 @@ h1:focus {
         padding-left: env(safe-area-inset-left);
     }
 }
+
+.ButtonStyle {
+    font-size: 14px;
+    border: 0px;
+    border-radius: 5px;
+    background-color: blueviolet;
+    cursor: pointer;
+    transition: background-color .2s ease, border-color .2s ease, color .2s ease;
+}
