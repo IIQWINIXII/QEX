@@ -24,4 +24,18 @@ namespace QEX_Lib.ClientDB.Model
 
         }
     }
+    public class SettingElementStyleList : IBaseModelList
+    {
+        public List<SettingElementStyle> Items { get; set; } = new List<SettingElementStyle>();
+        public void Load(ClientContext context)
+        {
+            Items = context.SettingsStyles.Select(s => s).ToList();
+        }
+        public void Save(ClientContext context)
+        {
+        }
+        public void Delete(ClientContext context)
+        {
+        }
+    }
 }

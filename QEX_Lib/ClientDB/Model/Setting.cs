@@ -40,4 +40,18 @@ namespace QEX_Lib.ClientDB.Model
 
         }
     }
+    public class SettingList : IBaseModelList
+    {
+        public List<Setting> Items { get; set; } = new List<Setting>();
+        public void Load(ClientContext context)
+        {
+            Items = context.Settings.Select(s => s).ToList();
+        }
+        public void Save(ClientContext context)
+        {
+        }
+        public void Delete(ClientContext context)
+        {
+        }
+    }
 }

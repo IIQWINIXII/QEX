@@ -10,11 +10,11 @@ namespace QEX_Lib.ClientDB.Model
 {
     public class User : IBaseModel
     {
-        [Key]
         public int ID { get; set; }
         [MaxLength(128)]   
         public string? Name { get; set; }
         [MaxLength(128)]
+        [Key]
         public string? Login { get; set; }
         public int CurrentAvatarID { get; set; }
         [MaxLength(128)]
@@ -23,7 +23,7 @@ namespace QEX_Lib.ClientDB.Model
         public string? Email { get; set; }
         public void Save(ClientContext context)
         {
-            
+
         }
         public void Load(ClientContext context)
         {
@@ -43,7 +43,7 @@ namespace QEX_Lib.ClientDB.Model
         }
         public void Delete(ClientContext context)
         {
-            throw new NotImplementedException();
+            
         }
     }
 }

@@ -28,4 +28,19 @@ namespace QEX_Lib.ClientDB.Model
 
         }
     }
+    public class SettingThemeList : IBaseModelList
+    {
+        public List<SettingTheme> Items { get; set; } = new List<SettingTheme>();
+        public void Load(ClientContext context)
+        {
+            Items = context.SettingsThemes.Select(s => s).ToList();
+        }
+        public void Save(ClientContext context)
+        {
+
+        }
+        public void Delete(ClientContext context)
+        {
+        }
+    }
 }

@@ -27,4 +27,18 @@ namespace QEX_Lib.ClientDB.Model
 
         }
     }
+    public class CustomFieldPositionList : IBaseModelList
+    {
+        public List<CustomFieldPosition> Items { get; set; } = new List<CustomFieldPosition>();
+        public void Load(ClientContext context)
+        {
+            Items = context.CustomFields.Select(c => c).ToList();
+        }
+        public void Save(ClientContext context)
+        {
+        }
+        public void Delete(ClientContext context)
+        {
+        }
+    }
 }

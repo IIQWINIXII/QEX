@@ -4,7 +4,7 @@
     align-items: center;
     align-self: center;
     height: 100%;
-    background: linear-gradient(135deg, #5A0FC8 0%, #1DBF73 100%);
+    background: linear-gradient(135deg, #4b0ea4 0%, #1ca464 100%);
 }
 .AuthDiv {
     justify-content: center;
@@ -14,7 +14,7 @@
     width: 550px;
     background-color: #ffffff60;
     border: 2px solid #ededed80;
-    border-radius: 25px;
+    border-radius: 15px;
 }
 
 .AuthInputDiv {
@@ -23,7 +23,7 @@
 }
 
 .AuthInput {
-    font-size: 20px;
+    font-size: 30px;
     border-radius: 5px;
     width: calc(100% - 20px);
     margin: 10px 10px 10px 10px;
@@ -37,14 +37,16 @@
 .AuthActiveButton {
     margin: 0px 10px 0px 10px;
     width: 70%;
-    border-radius: 5px 5px 5px 15px;
+    border-radius: 5px 5px 5px 5px;
     border: 0;
     height: 30px;
+    font-size: 16px;
 }
 .AuthUnActiveButton {
     margin: 0px 10px 0px 0px;
     border: 0;
-    border-radius: 5px 5px 15px 5px;
+    border-radius: 5px 5px 5px 5px;
     width: 30%;
     height: 30px;
+    font-size: 16px;
 }

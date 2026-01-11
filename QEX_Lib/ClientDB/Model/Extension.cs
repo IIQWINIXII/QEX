@@ -25,4 +25,18 @@ namespace QEX_Lib.ClientDB.Model
 
         }
     }
+    public class ExtensionList : IBaseModelList
+    {
+        public List<Extension> Items { get; set; } = new List<Extension>();
+        public void Load(ClientContext context)
+        {
+            Items = context.Extensions.Select(e => e).ToList();
+        }
+        public void Save(ClientContext context)
+        {
+        }
+        public void Delete(ClientContext context)
+        {
+        }
+} 
 }

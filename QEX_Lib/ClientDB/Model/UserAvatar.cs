@@ -29,4 +29,30 @@ namespace QEX_Lib.ClientDB.Model
 
         }
     }
+    public class UserAvatarList : IBaseModelList
+    {
+        public List<UserAvatar> Items { get; set; } = new();
+        public UserAvatar GetByID(int ID) =>
+            Items.First(A => A.ID == ID);
+        public string GetAvatarBase64ByID(int ID) =>
+            Convert.ToBase64String(GetByID(ID).IMG);
+
+        public string GetImageFromBase64ByID(int ID) =>
+            $"data:image/{GetByID(ID).Type};base64,{GetAvatarBase64ByID(ID)}";
+
+        public void Load(ClientContext context)
+        {
+            Items = context.UsersAvatars.ToList();
+        }
+
+        public void Save(ClientContext context)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Delete(ClientContext context)
+        {
+            throw new NotImplementedException();
+        }
+    }
 }

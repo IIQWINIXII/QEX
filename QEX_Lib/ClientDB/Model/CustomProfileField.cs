@@ -26,4 +26,18 @@ namespace QEX_Lib.ClientDB.Model
 
         }
     }
+    public class CustomProfileFieldList : IBaseModelList
+    {
+        public List<CustomProfileField> Items { get; set; } = new List<CustomProfileField>();
+        public void Load(ClientContext context)
+        {
+            Items = context.CustomProfileFields.Select(cpf => cpf).ToList();
+        }
+        public void Save(ClientContext context)
+        {
+        }
+        public void Delete(ClientContext context)
+        {
+        }
+    }
 }
