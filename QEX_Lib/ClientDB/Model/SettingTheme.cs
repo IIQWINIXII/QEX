@@ -7,13 +7,12 @@ using System.Threading.Tasks;
 
 namespace QEX_Lib.ClientDB.Model
 {
+    /// <summary>
+    /// ID_Setting: Need to select setting preset
+    /// </summary>
     public class SettingTheme : IBaseModel
     {
         public int ID { get; set; }
-        /// <summary>
-        /// ID_Setting: Need to select setting preset
-        /// </summary>
-        public int ID_S { get; set; }
         public string? Name { get; set; }
         public string? BackgroundColor { get; set; }
         public string? FirstColor { get; set; }

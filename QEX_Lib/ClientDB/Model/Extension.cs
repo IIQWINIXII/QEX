@@ -11,11 +11,11 @@ namespace QEX_Lib.ClientDB.Model
     {
         public int ID { get; set; }
         public string? Name { get; set; }
+        public string? Author { get; set; }
+        public string? Version { get; set; }
         public string? Type { get; set; }
         public string? Tag { get; set; }
         public string? Description { get; set; }
-        public string? ExtensionPath { get; set; }
-        public bool IsInstalled { get; set; }
         public void Load(ClientContext context)
         {
 

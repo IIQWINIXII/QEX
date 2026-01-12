@@ -21,7 +21,7 @@ namespace QEX_Lib.ClientDB
         public DbSet<CustomProfileField> CustomProfileFields => Set<CustomProfileField>();
         public DbSet<Extension> Extensions => Set<Extension>();
         public DbSet<Setting> Settings => Set<Setting>();
-        public DbSet<SettingElementStyle> SettingsStyles => Set<SettingElementStyle>();
+        public DbSet<SettingStyle> SettingsStyles => Set<SettingStyle>();
         public DbSet<SettingTheme> SettingsThemes => Set<SettingTheme>();
         public DbSet<UserAvatar> UsersAvatars => Set<UserAvatar>();
         public DbSet<User> Users => Set<User>();
