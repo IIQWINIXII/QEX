@@ -36,13 +36,13 @@
 
     protected override void OnInitialized()
     {
-        //UserList.Load(clientContext);
+        UserList.Load(clientContext);
        
         base.OnInitialized();
     }
     public void AddUserLoggedIn(User user)
     {
-        UserList.Items.Add(user);
+        UserList.Items.Add(user); // server ()
         UserList.Save(clientContext); 
         StateHasChanged();
     }

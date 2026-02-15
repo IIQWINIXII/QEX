@@ -7,14 +7,16 @@ using System.Threading.Tasks;
 
 namespace QEX_Lib.ClientDB.Model
 {
-    public class SettingElementStyle : IBaseModel
+    public class SettingStyle : IBaseModel
     {
-        public int ID { get; set; }
         /// <summary>
-        /// ID_Setting: Need to select setting preset
+        /// ID: Need to select setting preset
         /// </summary>
-        public int ID_S { get; set; }
+        public int ID { get; set; }
         public string? Name { get; set; }
+        public string? Description { get; set; }
+        public int Type { get; set; } = 0;
+        public byte[] Value {get; set; } = Array.Empty<byte>();
         public void Load(ClientContext context)
         {
 
@@ -26,7 +28,7 @@ namespace QEX_Lib.ClientDB.Model
     }
     public class SettingElementStyleList : IBaseModelList
     {
-        public List<SettingElementStyle> Items { get; set; } = new List<SettingElementStyle>();
+        public List<SettingStyle> Items { get; set; } = new List<SettingStyle>();
         public void Load(ClientContext context)
         {
             Items = context.SettingsStyles.Select(s => s).ToList();
