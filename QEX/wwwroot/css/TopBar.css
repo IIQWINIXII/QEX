@@ -1,0 +1,44 @@
+﻿.TopBar {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    align-content: revert;
+}
+
+.TopBarButton {
+    background-color: transparent;
+    height: 100%;
+    width: 40px;
+    padding: 0;
+    border: none;
+    cursor: pointer;
+    color: inherit;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition:
+        background-color 120ms ease,
+        color 120ms ease,
+        transform 80ms ease;
+}
+
+/* Обшее наведённое состояние — чуть темнее */
+.TopBarButton:hover {
+    background-color: rgba(0, 0, 0, 0.06);
+}
+
+/* Особое наведение для кнопки закрытия (первая кнопка) — красное выделение */
+.TopBar > .TopBarButton:nth-child(3):hover {
+    background-color: rgba(255, 69, 58, 0.95); /* яркий красный фон */
+    color: #ffffff;
+}
+
+/* Немного более тёмное наведение для остальных (2 и 3 кнопка) */
+.TopBar > .TopBarButton:nth-child(2):hover,
+.TopBar > .TopBarButton:nth-child(1):hover {
+    background-color: rgba(0, 0, 0, 0.12);
+    color: inherit;
+}
