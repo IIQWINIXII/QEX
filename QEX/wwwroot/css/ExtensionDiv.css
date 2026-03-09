@@ -1,0 +1,19 @@
+.ExtensionContainer {
+    position: absolute;
+    top: 0;
+    right: -400px;
+    width: 400px;
+    height: 100%;
+    background: #f5f5f5;
+    box-shadow: -2px 0 5px rgba(0,0,0,0.2);
+    transition: right .3s ease;
+    overflow-y: auto;
+}
+
+    .ExtensionContainer.Open {
+        right: 0;
+    }
+
+.ExtensionCaption {
+    padding: 20px;
+}

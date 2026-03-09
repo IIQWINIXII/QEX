@@ -2,7 +2,7 @@
 @using Abstractions.Interface;
 @using Abstractions.Service;
 @inject IExtensionService ExtensionService
-<div class="ExtensionContainer">
+<div class="ExtensionContainer @(ExtensionService.IsVisible ? "Open" : "")">
     @if (ExtensionService.IsVisible && ExtensionService.CurrentComponentType != null)
     {
         <div class="ExtensionCaption">
@@ -23,7 +23,7 @@
     {
         ExtensionService.OnOpenExtension += (type, parameters) => StateHasChanged();
         ExtensionService.OnCloseExtension += StateHasChanged;
-        //base.OnInitialized();
+        base.OnInitialized();
     }
 
     private void CloseExtension()

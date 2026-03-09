@@ -10,6 +10,7 @@ namespace QEX.Abstractions.Service
 {
     public class ExtensionService : IExtensionService
     {
+        private readonly Dictionary<string, Type> _Extension =  [];
 
         public Type? CurrentComponentType { get; private set; }
 
@@ -41,6 +42,17 @@ namespace QEX.Abstractions.Service
             IsVisible = true;
 
             OnOpenExtension?.Invoke(ComponentType, CurrentParameters);
+        }
+        public void OpenExtensionByName(string name, Dictionary<string, object>? parameters)
+        {
+            var type = AppDomain.CurrentDomain.GetAssemblies()
+                .SelectMany(a => a.GetTypes())
+                .FirstOrDefault(t => t.Name == name) ?? throw new Exception($"Component '{name}' not found.");
+            OpenExtension(type, parameters);
+        }
+        public void RegisterExtension<TComponent>(string Tag) where TComponent : ComponentBase
+        {
+            _Extension[Tag] = typeof(TComponent);
         }
     }
 }

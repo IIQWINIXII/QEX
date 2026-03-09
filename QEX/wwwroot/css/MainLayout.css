@@ -1,27 +1,17 @@
-.MainLayout{
+.MainLayout {
     height: 100%;
+    display: flex;
+    flex-direction: column;
 }
-.TopBarDiv{
-    height: 32px
-}
-.MainDiv {
+
+.MainGrid {
     display: grid;
-    grid-template-columns: 260px 1fr;
-    height: 100%-32px;
-}
-
-.SideBarDiv {
-    width: 100%;
-    box-sizing: border-box;
-    grid-column: 1;
-    border-color: black;
-    border: 1px solid;
+    grid-template-columns: auto 1fr;
     height: 100%;
+    overflow: hidden;
 }
 
-.ExtensionLayout{
-    border-color: black;
-    border: 1px solid;
-    grid-column: 2;
+.ExtensionLayout {
+    position: relative;
     height: 100%;
 }

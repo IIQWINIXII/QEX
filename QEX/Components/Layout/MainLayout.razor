@@ -9,15 +9,14 @@
 
 @inject IExtensionService ExtensionService
 
-<div class="MainLayout">
-    @if (UserList.Items.Count == 0)
+<div style="height:100%" class="MainLayout">
+    @if (true) //(UserList.Items.Count == 0)
     {
-        <div class="MainDiv">
-            <div class="SideBarDiv">
-                <SideBar></SideBar>
-            </div>
+        <div class="MainGrid">
+            <SideBar></SideBar>
+
             <div class="ExtensionLayout">
-                <ExtensionDiv ></ExtensionDiv>
+                <ExtensionDiv></ExtensionDiv>
             </div>
         </div>
     }

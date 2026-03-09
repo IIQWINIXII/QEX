@@ -1,5 +1,75 @@
-﻿<h3>ExtensionsStoreExtension</h3>
+﻿@using QEX.Abstractions.Interface
+@using QEX_Lib.ClientDB.Model;
+@using QEX.Abstractions.Service;
+@using QEX.Components.Extensions.Base;
+
+@inject IExtensionService extensionService
+<div class="store-container">
+    <div class="store-header">
+        <input class="store-search"
+               @bind="Search"
+               placeholder="Поиск расширений..." />
+    </div>
+
+    <div class="store-tabs">
+        <button @onclick="() => SwitchTab(StoreTab.Store)">
+            Магазин
+        </button>
+        <button @onclick="() => SwitchTab(StoreTab.Installed)">
+            Моя библиотека
+        </button>
+    </div>
+
+    @if (ActiveTab == StoreTab.Store)
+    {
+        <div class="store-grid">
+            store
+        </div>
+    }
+
+    @if (ActiveTab == StoreTab.Installed)
+    {
+        <div class="store-grid">
+            @foreach (var ext in extensionList.Items)
+            {
+                <div class="store-card" @onclick="() => OpenExtension(ext.Name)" style="border: solid 1px">
+                    <h4>@ext.Name</h4>
+                    <p>@ext.Description</p>
+                </div>
+            }
+        </div>
+    }
+</div>
 
 @code {
+    [Parameter] public EventCallback OnClose { get; set; }
 
+    string Search = "";
+
+    enum StoreTab { Store, Installed }
+    StoreTab ActiveTab = StoreTab.Installed;
+
+    ExtensionList extensionList = new();
+
+    protected override void OnInitialized()
+    {
+        extensionList.LoadByPath();
+        base.OnInitialized();
+    }
+
+    void SwitchTab(StoreTab tab)
+    {
+        ActiveTab = tab;
+    }
+    void OpenExtension(string name)
+    {
+        extensionService.CloseExtension();
+        var parameters = new Dictionary<string, object>
+        {
+            
+        };
+        extensionService.OpenExtensionByName(name, parameters);
+    }
+
+    
 }

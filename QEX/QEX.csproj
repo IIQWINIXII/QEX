@@ -58,10 +58,19 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.0" />
-        <PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
-        <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="$(MauiVersion)" />
-        <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0" />
+      <AndroidResource Remove="Components\Extensions\Installed\QEX_Writer\QEX_Writer\obj\**" />
+      <Compile Remove="Components\Extensions\Installed\QEX_Writer\QEX_Writer\obj\**" />
+      <Content Remove="Components\Extensions\Installed\QEX_Writer\QEX_Writer\obj\**" />
+      <EmbeddedResource Remove="Components\Extensions\Installed\QEX_Writer\QEX_Writer\obj\**" />
+      <MauiXaml Remove="Components\Extensions\Installed\QEX_Writer\QEX_Writer\obj\**" />
+      <None Remove="Components\Extensions\Installed\QEX_Writer\QEX_Writer\obj\**" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.3" />
+        <PackageReference Include="Microsoft.Maui.Controls" Version="10.0.41" />
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="10.0.41" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.3" />
     </ItemGroup>
 
     <ItemGroup>
@@ -78,10 +87,6 @@
       <None Update="Resources\Data\QEX_DB_CL">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="Components\Extensions\Installed\" />
     </ItemGroup>
 
 </Project>

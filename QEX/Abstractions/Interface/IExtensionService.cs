@@ -28,17 +28,30 @@ namespace QEX.Abstractions.Interface
         /// </summary>
         /// <typeparam name="TComponent">Тип компонента Blazor</typeparam>
         /// <param name="Parameters">Параметры для компонента</param>
-        void OpenExtension<TComponent>(Dictionary<string, object>? Parameters = null) 
+        public void OpenExtension<TComponent>(Dictionary<string, object>? Parameters = null) 
             where TComponent : ComponentBase;
 
         /// <summary>
         /// Открыть раширение с указанным типом компонента
         /// </summary>
-        void OpenExtension(Type ComponentType, Dictionary<string, object>? Parameters = null);
-
+        public void OpenExtension(Type ComponentType, Dictionary<string, object>? Parameters = null);
+        /// <summary>
+        /// Открыть расширениия по его имени 
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="parameters"></param>
+        public void OpenExtensionByName(string name, Dictionary<string, object>? parameters);
         /// <summary>
         /// Закрыть текущее расширение
         /// </summary>
-        void CloseExtension();
+        public void CloseExtension();
+        /// <summary>
+        /// Регистрация компонента расширения с определенным тегом 
+        /// для последующего использования при открытии расширения по тегу
+        /// </summary>
+        /// <typeparam name="TComponent"></typeparam>
+        /// <param name="Tag"></param>
+        public void RegisterExtension<TComponent>(string Tag) where TComponent : ComponentBase;
+        
     }
 }
