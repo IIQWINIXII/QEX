@@ -101,7 +101,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <RazorComponent Include="Components\UI\UI\PageLayout.razor">
+      <RazorComponent Include="Components\UI\UI\PageLayout\PageLayout.razor">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </RazorComponent>
     </ItemGroup>
