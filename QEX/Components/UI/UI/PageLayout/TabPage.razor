@@ -1,0 +1,18 @@
+@implements IDisposable
+
+@code {
+    [CascadingParameter] PageLayout? Layout { get; set; }
+
+    protected override void OnInitialized()
+    {
+        Layout?.Register(this);
+    }
+
+    public void Dispose()
+    {
+        Layout?.Unregister(this);
+    }
+
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

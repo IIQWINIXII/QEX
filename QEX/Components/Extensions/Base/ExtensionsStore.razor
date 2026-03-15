@@ -32,10 +32,13 @@
         <div class="store-grid">
             @foreach (var ext in extensionList.Items)
             {
-                <div class="store-card" @onclick="() => OpenExtension(ext.Name)" style="border: solid 1px">
-                    <h4>@ext.Name</h4>
-                    <p>@ext.Description</p>
-                </div>
+                @if (ext.Name != null)
+                {
+                    <div class="store-card" @onclick="() => OpenExtension(ext.Name)" style="border: solid 1px">
+                        <h4>@ext.Name</h4>
+                        <p>@ext.Description</p>
+                    </div>
+                }
             }
         </div>
     }

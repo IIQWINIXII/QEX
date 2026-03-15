@@ -58,23 +58,52 @@
     </ItemGroup>
 
     <ItemGroup>
+      <AndroidResource Remove="Components\Extensions\Installed\QEX_Writer\QEX_Writer\bin\**" />
       <AndroidResource Remove="Components\Extensions\Installed\QEX_Writer\QEX_Writer\obj\**" />
+      <AndroidResource Remove="Components\UI\UI\bin\**" />
+      <AndroidResource Remove="Components\UI\UI\obj\**" />
+      <Compile Remove="Components\Extensions\Installed\QEX_Writer\QEX_Writer\bin\**" />
       <Compile Remove="Components\Extensions\Installed\QEX_Writer\QEX_Writer\obj\**" />
+      <Compile Remove="Components\UI\UI\bin\**" />
+      <Compile Remove="Components\UI\UI\obj\**" />
+      <Content Remove="Components\Extensions\Installed\QEX_Writer\QEX_Writer\bin\**" />
       <Content Remove="Components\Extensions\Installed\QEX_Writer\QEX_Writer\obj\**" />
+      <Content Remove="Components\UI\UI\bin\**" />
+      <Content Remove="Components\UI\UI\obj\**" />
+      <EmbeddedResource Remove="Components\Extensions\Installed\QEX_Writer\QEX_Writer\bin\**" />
       <EmbeddedResource Remove="Components\Extensions\Installed\QEX_Writer\QEX_Writer\obj\**" />
+      <EmbeddedResource Remove="Components\UI\UI\bin\**" />
+      <EmbeddedResource Remove="Components\UI\UI\obj\**" />
+      <MauiXaml Remove="Components\Extensions\Installed\QEX_Writer\QEX_Writer\bin\**" />
       <MauiXaml Remove="Components\Extensions\Installed\QEX_Writer\QEX_Writer\obj\**" />
+      <MauiXaml Remove="Components\UI\UI\bin\**" />
+      <MauiXaml Remove="Components\UI\UI\obj\**" />
+      <None Remove="Components\Extensions\Installed\QEX_Writer\QEX_Writer\bin\**" />
       <None Remove="Components\Extensions\Installed\QEX_Writer\QEX_Writer\obj\**" />
+      <None Remove="Components\UI\UI\bin\**" />
+      <None Remove="Components\UI\UI\obj\**" />
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.3" />
-        <PackageReference Include="Microsoft.Maui.Controls" Version="10.0.41" />
-        <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="10.0.41" />
-        <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.3" />
+      <Content Remove="Components\Extensions\Installed\QEX_Writer\QEX_Writer\_Imports.razor" />
+      <Content Remove="Components\UI\UI\PageLayout.razor" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.5" />
+        <PackageReference Include="Microsoft.Maui.Controls" Version="10.0.50" />
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="10.0.50" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.5" />
     </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\QEX_Lib\QEX_Lib.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <RazorComponent Include="Components\UI\UI\PageLayout.razor">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </RazorComponent>
     </ItemGroup>
 
     <ItemGroup>

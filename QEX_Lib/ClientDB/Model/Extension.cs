@@ -61,6 +61,13 @@ namespace QEX_Lib.ClientDB.Model
                                 Description = man.Description
 
                             });
+                            Items.Add(new Extension
+                            {
+                                Name = man.Name,
+                                Version = man.Version,
+                                Description = man.Description
+
+                            });
                         }
                     }
                 }

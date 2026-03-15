@@ -1,0 +1,98 @@
+
+
+<div class="page-layout-component">
+    <div class="page-tabs">
+        @foreach (var tab in Pages)
+        {
+            <div class=@("tab-button " + (tab == ActivePage ? "active" : ""))
+                    @onclick="() => Activate(tab)">
+                @tab.Title
+                <button class="close-page-button">
+                    X
+                </button>
+            </div>
+        }
+    </div>
+
+    <div class="page-content">
+        @ActivePage?.ChildContent
+    </div>
+
+    <div style="display:none">
+        <CascadingValue Value="this">
+            @ChildContent
+        </CascadingValue>
+    </div>
+</div>
+
+<style>
+    .page-layout-component .page-tabs {
+        display: flex;
+        border-bottom: 1px solid #ccc;
+        height: 100%;
+    }
+
+    .page-layout-component .tab-button {
+        background: #f3f3f3;
+        border: 0px none #ccc;
+        border-radius: 6px 6px 0 0;
+        cursor: pointer;
+        font-size: 14px;
+        color: #333;
+        transition: 0.2s;
+        height: 20px;
+    }
+
+        .page-layout-component .tab-button:hover {
+            background: #e8e8e8;
+        }
+
+        .page-layout-component .tab-button.active {
+            background: white;
+            border: 1px solid #ccc;
+            font-weight: 600;
+            color: #000;
+        }
+
+    .page-layout-component .page-content {
+        border-radius: 0 6px 6px 6px;
+        background: white;
+        height: 100%;
+    }
+</style>
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    internal List<TabPage> Pages { get; } = new();
+
+    internal TabPage? ActivePage { get; set; }
+
+    internal void Register(TabPage page)
+    {
+        Pages.Add(page);
+
+        if (ActivePage is null)
+            ActivePage = page;
+
+        StateHasChanged();
+    }
+
+    internal void Unregister(TabPage page)
+    {
+        if (Pages.Remove(page))
+        {
+            if (ActivePage == page)
+                ActivePage = Pages.Count > 0 ? Pages[0] : null;
+
+            StateHasChanged();
+        }
+    }
+
+    private void Activate(TabPage page)
+    {
+        ActivePage = page;
+        StateHasChanged();
+    }
+
+    
+}
