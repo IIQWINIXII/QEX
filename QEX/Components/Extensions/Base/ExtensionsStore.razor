@@ -56,7 +56,16 @@
 
     protected override void OnInitialized()
     {
-        extensionList.LoadByPath();
+        try
+        {
+            extensionList.LoadByPath();
+        }
+        catch
+        {
+            Console.WriteLine("Failed to load extensions");
+        }
+
+        
         base.OnInitialized();
     }
 

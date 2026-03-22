@@ -30,7 +30,7 @@ namespace QEX_Lib.ClientDB
             base.OnModelCreating(modelBuilder);
 
         public static ClientContext Create() =>
-            new ClientContext(new DbContextOptionsBuilder<ClientContext>()
+            new(new DbContextOptionsBuilder<ClientContext>()
                 .UseSqlite(string.Format(ConnectionStringTemplate ?? "Data Source={0}", 
                 Path.Combine(AppContext.BaseDirectory, "Resources", "Data", "QEX_DB_CL")))
                 .Options);

@@ -1,4 +1,5 @@
-﻿@using QEX.Components.UI.UI
+﻿@using QEX.Components.UI.UI.PageLayout
+@using QEX.Components.UI.UI.RichEdit
 
 <div class="my-component">
     <PageLayout>
@@ -7,7 +8,7 @@
         </TabPage>
 
         <TabPage Title="sdhfijkl111">
-            контент 2
+            <RichEdit @bind-Value="Text" ToolBarVisible="true"/>
         </TabPage>
     </PageLayout>
 </div>
@@ -18,6 +19,8 @@
 
 @code {
     [Parameter] public EventCallback OnClose { get; set; }
+
+    private string Text = "<p>Hello world</p>";
     
 }
 

@@ -12,6 +12,12 @@
                 </button>
             </div>
         }
+        @if (CanAddPage)
+        {
+            <button class="tab-button-add-page">+</button>
+        }
+
+        
     </div>
 
     <div class="page-content">
@@ -36,6 +42,7 @@
         background: #f3f3f3;
         border: 0px none #ccc;
         border-radius: 6px 6px 0 0;
+        border-color: transparent;
         cursor: pointer;
         font-size: 14px;
         color: #333;
@@ -59,10 +66,18 @@
         background: white;
         height: 100%;
     }
+
+    .page-layout-component .close-page-button {
+        border-radius: 0 6px 6px 6px;
+        background: white;
+        border-color: transparent;
+        height: 100%;
+    }
 </style>
 
 @code {
     [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public bool CanAddPage { get; set; }
     internal List<TabPage> Pages { get; } = new();
 
     internal TabPage? ActivePage { get; set; }

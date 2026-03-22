@@ -1,5 +1,131 @@
-﻿<h3>RichEdit</h3>
+﻿<div class="rich-edit">
+    @if (ToolBarVisible)
+    {
+        <div class="toolbar">
+            <button @onclick='() => ExecCmd("bold")'><b>B</b></button>
+            <button @onclick='() => ExecCmd("italic")'><i>I</i></button>
+            <button @onclick='() => ExecCmd("underline")'><u>U</u></button>
+
+            <button @onclick='() => ExecCmd("insertUnorderedList")'>• List</button>
+            <button @onclick='() => ExecCmd("insertOrderedList")'>1. List</button>
+
+            <button @onclick='() => ExecCmd("justifyLeft")'>Left</button>
+            <button @onclick='() => ExecCmd("justifyCenter")'>Center</button>
+            <button @onclick='() => ExecCmd("justifyRight")'>Right</button>
+
+            <button @onclick="Clear">Clear</button>
+        </div>
+    }
+    
+
+
+
+    <div id="@EditorId"
+         class="editor"
+         contenteditable="true"
+         @oninput="OnInput">
+    </div>
+</div>
+<style>
+    .rich-edit {
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        overflow: hidden;
+        font-family: sans-serif;
+    }
+
+    .toolbar {
+        background: #f3f3f3;
+        padding: 6px;
+        display: flex;
+        gap: 6px;
+        border-bottom: 1px solid #ccc;
+    }
+
+        .toolbar button {
+            padding: 4px 8px;
+            border: 1px solid #aaa;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+            .toolbar button:hover {
+                background: #e8e8e8;
+            }
+
+    .editor {
+        min-height: 200px;
+        padding: 10px;
+        outline: none;
+    }
+</style>
+<script>
+window.richEdit = {
+    exec: function (cmd) {
+        document.execCommand(cmd, false, null);
+    },
+
+    insertHtml: function (html) {
+        const sel = window.getSelection();
+        if (!sel.rangeCount) return;
+
+        const range = sel.getRangeAt(0);
+        range.deleteContents();
+
+        const temp = document.createElement("div");
+        temp.innerHTML = html;
+
+        const frag = document.createDocumentFragment();
+        let node;
+        while ((node = temp.firstChild)) {
+            frag.appendChild(node);
+        }
+
+        range.insertNode(frag);
+        range.collapse(false);
+    },
+
+    getHtml: id => document.getElementById(id).innerHTML,
+    setHtml: (id, html) => document.getElementById(id).innerHTML = html
+};
+</script>
+
+
 
 @code {
+    private string EditorId = "editor_" + Guid.NewGuid().ToString("N");
 
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public bool ToolBarVisible { get; set; }
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+
+    public async Task Exec(string cmd) => await ExecCmd(cmd);
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !string.IsNullOrEmpty(Value))
+        {
+            await JS.InvokeVoidAsync("richEdit.setHtml", EditorId, Value);
+        }
+    }
+
+    private async Task ExecCmd(string cmd)
+    {
+        await JS.InvokeVoidAsync("richEdit.exec", cmd);
+    }
+
+    private async Task Clear()
+    {
+        await JS.InvokeVoidAsync("richEdit.setHtml", EditorId, "");
+        await ValueChanged.InvokeAsync("");
+    }
+
+    private async Task OnInput(ChangeEventArgs e)
+    {
+        var html = await JS.InvokeAsync<string>("richEdit.getHtml", EditorId);
+        await ValueChanged.InvokeAsync(html);
+    }
+
+    [Inject] IJSRuntime JS { get; set; } = default!;
 }
