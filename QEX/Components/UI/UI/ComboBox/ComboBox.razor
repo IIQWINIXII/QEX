@@ -1,0 +1,132 @@
+﻿@typeparam TItem
+
+<div class="combo-box">
+    <input type="text"
+           class="combo-input"
+           @bind="SearchText"
+           @bind:event="oninput"
+           @onfocus="Show"
+           @onblur="HideDelayed" 
+           readonly="@SelectionOnly"/>
+
+    @if (IsOpen && FilteredItems.Any())
+    {
+        <div class="combo-dropdown">
+            @foreach (var item in FilteredItems)
+            {
+                <div class="combo-item"
+                     @onclick="() => Select(item)">
+                    @if (ItemTemplate is not null)
+                    {
+                        @ItemTemplate(item)
+                    }
+                    else
+                    {
+                        @TextSelector(item)
+                    }
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<style>
+    .combo-box {
+        position: relative;
+        width: 200px;
+    }
+
+    .combo-input {
+        width: 100%;
+        padding: 6px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+
+    .combo-dropdown {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        max-height: 200px;
+        overflow-y: auto;
+        z-index: 1000;
+    }
+
+    .combo-item {
+        padding: 6px;
+        cursor: pointer;
+    }
+
+        .combo-item:hover {
+            background: #eee;
+        }
+</style>
+
+@code {
+    private bool IsOpen = false;
+    private string SearchText = "";
+
+    [Parameter] public int Width { get; set; } = 200;
+    [Parameter] public int Height { get; set; } = 30;
+
+    [Parameter] public int MaxWidth { get; set; } = int.MaxValue;
+    [Parameter] public int MaxHeight { get; set; } = int.MaxValue;
+    [Parameter] public int MinWidth { get; set; } = 0;
+    [Parameter] public int MinHeight { get; set; } = 0;
+
+    [Parameter] public bool AutoSort { get; set; } = false;
+    [Parameter] public bool SelectionOnly { get; set; } = false;
+    [Parameter] public Func<TItem, string>? TextSelector { get; set; }
+    [Parameter] public RenderFragment<TItem>? ItemTemplate { get; set; }
+    [Parameter] public EventCallback<int> OnSelectIndex { get; set; }
+    [Parameter] public EventCallback<TItem> OnSelect { get; set; }
+    [Parameter] public IEnumerable<TItem>? Items { get; set; }
+
+    //Event
+    [Parameter] public EventCallback OnClick { get; set; } //
+
+    private IEnumerable<TItem> FilteredItems 
+    {
+        get
+        {
+            IEnumerable<TItem> source = Items ?? Enumerable.Empty<TItem>();
+
+            // 1. SelectionOnly — приоритет, выводим всё как есть
+            if (SelectionOnly)
+                return source;
+
+            // 2. AutoSort — сортируем, если включено
+            if (AutoSort && TextSelector is not null)
+                source = source.OrderBy(TextSelector);
+
+            // 3. Фильтрация — только если пользователь вводит текст
+            if (!string.IsNullOrWhiteSpace(SearchText))
+                source = source.Where(i => TextSelector!(i)
+                    .Contains(SearchText, StringComparison.OrdinalIgnoreCase));
+
+            return source;
+        }
+    }
+
+
+    private void Show() => IsOpen = true;
+
+    private async Task HideDelayed()
+    {
+        await Task.Delay(150);
+        IsOpen = false;
+        StateHasChanged();
+    }
+
+    private async Task Select(TItem item)
+    {
+        SearchText = TextSelector!(item);
+        IsOpen = false;
+        await OnSelect.InvokeAsync(item);
+        await OnSelectIndex.InvokeAsync(Items!.ToList().IndexOf(item));
+    }
+}

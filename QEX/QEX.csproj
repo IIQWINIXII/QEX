@@ -118,4 +118,8 @@
       </None>
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Components\UI\UI\ToolBar\" />
+    </ItemGroup>
+
 </Project>

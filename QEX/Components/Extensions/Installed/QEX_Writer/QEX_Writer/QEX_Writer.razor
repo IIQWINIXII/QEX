@@ -1,16 +1,29 @@
 ﻿@using QEX.Components.UI.UI.PageLayout
 @using QEX.Components.UI.UI.RichEdit
+@using QEX.Components.UI.UI.ComboBox
+@using QEX_Lib.ClientDB.Model
 
 <div class="my-component">
-    <PageLayout>
+    <PageLayout CanAddPage="true" OnCreateNewPageFragment="(builder) => { builder.OpenComponent<RichEdit>(0); builder.CloseComponent(); }"> 
         <TabPage Title="sdhfijkl">
-            <div contenteditable="true" style="height: 100px"></div>
+            <RichEdit ToolBarVisible="true"/>
         </TabPage>
 
         <TabPage Title="sdhfijkl111">
-            <RichEdit @bind-Value="Text" ToolBarVisible="true"/>
+            <RichEdit ToolBarVisible="true"/>
         </TabPage>
     </PageLayout>
+    <ComboBox TItem="User"
+              Items="@Users"
+              TextSelector="u => u.Name"
+              OnSelect="OnUserSelected"
+              SelectionOnly="true">
+        <ItemTemplate Context="u">
+            <div style="display:flex; gap:10px;">
+                <b>@u.Name</b>
+            </div>
+        </ItemTemplate>
+    </ComboBox>
 </div>
 
 <style>
@@ -18,10 +31,20 @@
 </style>
 
 @code {
+    private List<User> Users = new()
+    {
+        new User { Name = "Антон"},
+        new User { Name = "Мария"},
+        new User { Name = "Иван"}
+    };
+
+    private void OnUserSelected(User u)
+    {
+        Console.WriteLine($"Выбран: {u.Name}");
+    }
     [Parameter] public EventCallback OnClose { get; set; }
 
-    private string Text = "<p>Hello world</p>";
-    
+    public string[]? GetLastOpenedFile { get; set; }    
 }
 
 

@@ -1,5 +1,3 @@
-
-
 <div class="page-layout-component">
     <div class="page-tabs">
         @foreach (var tab in Pages)
@@ -14,7 +12,7 @@
         }
         @if (CanAddPage)
         {
-            <button class="tab-button-add-page">+</button>
+            <button class="tab-button-add-page" @onclick="AddPage">+</button>
         }
 
         
@@ -69,18 +67,39 @@
 
     .page-layout-component .close-page-button {
         border-radius: 0 6px 6px 6px;
-        background: white;
+        background: none;
         border-color: transparent;
         height: 100%;
+    }
+    .page-layout-component .tab-button-add-page{
+        border-color: transparent;
     }
 </style>
 
 @code {
-    [Parameter] public RenderFragment? ChildContent { get; set; }
-    [Parameter] public bool CanAddPage { get; set; }
+        [Parameter] public RenderFragment? ChildContent { get; set; }
+        [Parameter] public RenderFragment? OnCreateNewPageFragment { get; set; }
+        [Parameter] public bool CanAddPage { get; set; }
     internal List<TabPage> Pages { get; } = new();
 
     internal TabPage? ActivePage { get; set; }
+
+    public void AddPage()
+    {
+        if (OnCreateNewPageFragment is not null)
+            AddPage("Новая вкладка", OnCreateNewPageFragment);
+        else
+            AddPage("Новая вкладка", builder => { });
+}
+
+    public void AddPage(string? title, RenderFragment? content)
+    {
+        if (string.IsNullOrEmpty(title))
+            title = "Новая вкладка";
+        var page = new TabPage { Title = title, ChildContent = content };
+        Register(page);
+        Activate(page);
+    }
 
     internal void Register(TabPage page)
     {
