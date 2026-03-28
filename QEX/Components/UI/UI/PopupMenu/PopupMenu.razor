@@ -1,0 +1,74 @@
+﻿@inject IJSRuntime JS
+
+@if (IsOpen)
+{
+    <div class="popup-menu-container" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 999998;" @onclick="Close">
+        <div class="popup-menu" style="@Style" @onclick:stopPropagation @ref="_popupRef">
+            @ChildContent
+        </div>
+    </div>
+}
+
+<style>
+    .popup-menu {
+        position: fixed;
+        background: white;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        padding: 6px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        z-index: 999999;
+        min-width: 150px;
+    }
+</style>
+
+@code {
+    public bool IsOpen { get; private set; }
+    private string Style = "";
+    private ElementReference _popupRef;
+    private double _pendingX;
+    private double _pendingY;
+    private bool _needsAdjustment;
+
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    public void OpenAt(double x, double y)
+    {
+        // initial naive placement; real placement will be adjusted after render
+        _pendingX = x;
+        _pendingY = y;
+        Style = $"left:{x}px; top:{y}px;";
+        IsOpen = true;
+        _needsAdjustment = true;
+        StateHasChanged();
+    }
+
+    public void Close()
+    {
+        IsOpen = false;
+        _needsAdjustment = false;
+        StateHasChanged();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (IsOpen && _needsAdjustment)
+        {
+            _needsAdjustment = false;
+            try
+            {
+                // ask JS to measure the popup and compute adjusted coords that keep it inside viewport
+                var pos = await JS.InvokeAsync<double[]>("popupMenu.getAdjustedPosition", _pendingX, _pendingY, _popupRef);
+                if (pos is not null && pos.Length >= 2)
+                {
+                    Style = $"left:{pos[0]}px; top:{pos[1]}px;";
+                    StateHasChanged();
+                }
+            }
+            catch
+            {
+                // ignore JS errors - fallback to naive placement
+            }
+        }
+    }
+}

@@ -120,6 +120,11 @@
 
     <ItemGroup>
       <Folder Include="Components\UI\UI\ToolBar\" />
+      <Folder Include="Components\UI\UI\Button\" />
+      <Folder Include="Components\UI\UI\CheckBox\" />
+      <Folder Include="Components\UI\UI\RadioBox\" />
+      <Folder Include="Components\UI\UI\GroupBox\" />
+      <Folder Include="Components\UI\UI\Grid\" />
     </ItemGroup>
 
 </Project>

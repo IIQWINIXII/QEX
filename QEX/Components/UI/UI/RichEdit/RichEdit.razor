@@ -1,4 +1,7 @@
-﻿<div class="rich-edit">
+﻿@using QEX.Components.UI.UI.PopupMenu;
+@using Microsoft.AspNetCore.Components.Web
+
+<div class="rich-edit" @oncontextmenu="OpenMenu" @oncontextmenu:preventDefault>
     @if (ToolBarVisible)
     {
         <div class="toolbar">
@@ -95,13 +98,47 @@ window.richEdit = {
 
 
 @code {
+    private static class EditorExecCmd
+    {
+        public const string Bold = "bold";
+        public const string Italic = "italic";
+        public const string Underline = "underline";
+        public const string InsertUnorderedList = "insertUnorderedList";
+        public const string InsertOrderedList = "insertOrderedList";
+        public const string JustifyLeft = "justifyLeft";
+        public const string JustifyCenter = "justifyCenter";
+        public const string JustifyRight = "justifyRight";
+    }
+
     private string EditorId = "editor_" + Guid.NewGuid().ToString("N");
+
+    [Parameter] public int Width { get; set; } = 200;
+    [Parameter] public int Height { get; set; } = 200;
+
+    [Parameter] public int MaxWidth { get; set; } = int.MaxValue;
+    [Parameter] public int MaxHeight { get; set; } = int.MaxValue;
+    [Parameter] public int MinWidth { get; set; } = 0;
+    [Parameter] public int MinHeght { get; set; } = 0;
+
+    [Parameter] public int MarginTop { get; set; } = 0;
+    [Parameter] public int MarginBottom { get; set; } = 0;
+    [Parameter] public int MarginLeft { get; set; } = 0;
+    [Parameter] public int MarginRight { get; set; } = 0;
 
     [Parameter] public string? Value { get; set; }
     [Parameter] public bool ToolBarVisible { get; set; }
     [Parameter] public EventCallback<string> ValueChanged { get; set; }
+    [Parameter] public PopupMenu? PopupMenu { get; set; }
+
+    //[Parameter] public PageFormat Format { get; set; } = PageFormat.A4;  // прописать форматы для страниц
+
 
     public async Task Exec(string cmd) => await ExecCmd(cmd);
+
+    private async Task OpenMenu(MouseEventArgs e)
+    {
+        PopupMenu?.OpenAt(e.ClientX, e.ClientY);
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -127,6 +164,9 @@ window.richEdit = {
         var html = await JS.InvokeAsync<string>("richEdit.getHtml", EditorId);
         await ValueChanged.InvokeAsync(html);
     }
+
+    public async Task ToBold() => await ExecCmd(EditorExecCmd.Bold);
+    public async Task ToItalic() => await ExecCmd(EditorExecCmd.Italic);
 
     [Inject] IJSRuntime JS { get; set; } = default!;
 }

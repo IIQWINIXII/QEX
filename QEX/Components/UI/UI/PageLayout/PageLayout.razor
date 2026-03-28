@@ -77,9 +77,21 @@
 </style>
 
 @code {
-        [Parameter] public RenderFragment? ChildContent { get; set; }
-        [Parameter] public RenderFragment? OnCreateNewPageFragment { get; set; }
-        [Parameter] public bool CanAddPage { get; set; }
+    [Parameter] public int Width { get; set; } = 200;
+    [Parameter] public int Height { get; set; } = 200;
+
+    [Parameter] public int MaxWidth { get; set; } = int.MaxValue;
+    [Parameter] public int MaxHeigth { get; set; } = int.MaxValue;
+
+    [Parameter] public int MinWidth { get; set; } = 0;
+    [Parameter] public int MinHeight { get; set; } = 0;
+
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public RenderFragment? OnCreateNewPageFragment { get; set; }
+    [Parameter] public bool CanAddPage { get; set; }
+
+    [Parameter] public EventCallback OnClick { get; set; }
+
     internal List<TabPage> Pages { get; } = new();
 
     internal TabPage? ActivePage { get; set; }
