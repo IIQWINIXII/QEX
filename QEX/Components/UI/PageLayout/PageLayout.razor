@@ -88,7 +88,9 @@
 
     [Parameter] public RenderFragment? ChildContent { get; set; }
     [Parameter] public RenderFragment? OnCreateNewPageFragment { get; set; }
-    [Parameter] public bool CanAddPage { get; set; }
+    [Parameter] public bool CanAddPage { get; set; } = true;
+    [Parameter] public bool PageVisible { get; set; } = true;
+    [Parameter] public bool Visible { get; set; } = true;
 
     [Parameter] public EventCallback OnClick { get; set; }
 
@@ -102,12 +104,15 @@
             AddPage("Новая вкладка", OnCreateNewPageFragment);
         else
             AddPage("Новая вкладка", builder => { });
-}
+    }
 
     public void AddPage(string? title, RenderFragment? content)
     {
-        if (string.IsNullOrEmpty(title))
+        if (content == null)
+            return;
+        if (string.IsNullOrEmpty(title)) 
             title = "Новая вкладка";
+
         var page = new TabPage { Title = title, ChildContent = content };
         Register(page);
         Activate(page);

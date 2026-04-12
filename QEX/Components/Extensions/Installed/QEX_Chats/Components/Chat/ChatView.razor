@@ -1,0 +1,42 @@
+﻿@using QEX_Lib.ClientDB
+@inject ChatService Chat
+
+<div class="chat-view">
+    @if (Chat.CurrentChannel != null)
+    {
+        @foreach (var msg in Chat.CurrentChannel.Messages)
+        {
+            <div class="msg">
+                <b>@msg.Sender?.Name:</b> @msg.Message
+                <div class="time">@msg.Timestamp.ToShortTimeString()</div>
+            </div>
+        }
+    }
+</div>
+
+<style>
+    .chat-view {
+        height: 100%;
+        padding: 10px;
+        background: #1e1e1e;
+        color: white;
+        font-family: sans-serif;
+    }
+
+    .msg {
+        margin-bottom: 10px;
+    }
+
+    .time {
+        font-size: 10px;
+        opacity: 0.6;
+    }
+</style>
+
+@code {
+    protected override void OnInitialized()
+    {
+        Chat.OnMessagesChanged += StateHasChanged;
+        Chat.OnUIChanged += StateHasChanged;
+    }
+}

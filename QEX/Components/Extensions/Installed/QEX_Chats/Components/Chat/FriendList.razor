@@ -1,0 +1,47 @@
+﻿@using QEX_Lib.ClientDB.Model
+@inject ChatService Chat
+
+<div class="friend-list">
+    @foreach (var friend in Friends)
+    {
+        <div class="friend" @onclick="() => OpenChat(friend)">
+            @friend.Name
+        </div>
+    }
+</div>
+<style>
+.friend-list {
+    width: 200px;
+    background: #202225;
+    color: white;
+    padding: 10px;
+}
+.friend {
+    padding: 8px;
+    cursor: pointer;
+}
+.friend:hover {
+    background: #2f3136;
+}
+</style>
+
+@code {
+    // TODO: подгрузить друзей из базы
+    List<User> Friends = new()
+    {
+        new User { Name = "Мария", ID = 1 },
+        new User { Name = "Иван", ID = 2 }
+    };
+
+    private void OpenChat(User friend)
+    {
+        var chat = Chat.GetOrCreateDirectChat(friend);
+        Chat.SelectDirectChat(chat);
+    }
+
+    protected override void OnInitialized()
+    {
+        Chat.OnUIChanged += StateHasChanged;
+    }
+
+}

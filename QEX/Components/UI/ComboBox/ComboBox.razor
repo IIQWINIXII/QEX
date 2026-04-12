@@ -20,10 +20,6 @@
                     {
                         @ItemTemplate(item)
                     }
-                    else
-                    {
-                        @TextSelector(item)
-                    }
                 </div>
             }
         </div>
@@ -87,6 +83,8 @@
     [Parameter] public EventCallback<TItem> OnSelect { get; set; }
     [Parameter] public IEnumerable<TItem>? Items { get; set; }
 
+    [Parameter] public string? Caption { get; set; } = "";
+
     //Event
     [Parameter] public EventCallback OnClick { get; set; } //
 
@@ -96,15 +94,12 @@
         {
             IEnumerable<TItem> source = Items ?? Enumerable.Empty<TItem>();
 
-            // 1. SelectionOnly — приоритет, выводим всё как есть
             if (SelectionOnly)
                 return source;
 
-            // 2. AutoSort — сортируем, если включено
             if (AutoSort && TextSelector is not null)
                 source = source.OrderBy(TextSelector);
 
-            // 3. Фильтрация — только если пользователь вводит текст
             if (!string.IsNullOrWhiteSpace(SearchText))
                 source = source.Where(i => TextSelector!(i)
                     .Contains(SearchText, StringComparison.OrdinalIgnoreCase));

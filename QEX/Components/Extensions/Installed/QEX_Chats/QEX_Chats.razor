@@ -1,0 +1,11 @@
+﻿@using QEX.Components.Extensions.Installed.QEX_Chats.Components.Chat
+
+<div class="my-component" style="height: 100%">
+    <ChatPage/>
+</div>
+
+
+
+@code{
+    [Parameter] public EventCallback OnClose { get; set; }
+}

@@ -2,10 +2,10 @@
 @using Abstractions.Interface;
 @using Abstractions.Service;
 @inject IExtensionService ExtensionService
-<div class="ExtensionContainer @(ExtensionService.IsVisible ? "Open" : "")">
+<div class="ExtensionContainer @(ExtensionService.IsVisible ? "Open" : "")" style="height: 100%;">
     @if (ExtensionService.IsVisible && ExtensionService.CurrentComponentType != null)
     {
-        <div class="ExtensionCaption">
+        <div class="ExtensionCaption" style="height:100%">
             @{
                 var parameters = ExtensionService.CurrentParameters ??
                         new Dictionary<string, object>();

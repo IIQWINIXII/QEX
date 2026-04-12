@@ -39,7 +39,7 @@ namespace QEX_Lib.ClientDB.Model
         {
             Items.Clear();
             //TODO: получение всех директорий для получения расширений и дальнейшая проверка всех указанных директорий
-            string path = Path.Combine(AppContext.BaseDirectory, "Components", "Extensions", "Installed", "QEX_Writer");
+            string path = Path.Combine(AppContext.BaseDirectory, "Components", "Extensions", "Installed");
 
             if (Directory.Exists(path))
             {
@@ -61,13 +61,6 @@ namespace QEX_Lib.ClientDB.Model
                                 Description = man.Description
 
                             });
-                            Items.Add(new Extension
-                            {
-                                Name = man.Name,
-                                Version = man.Version,
-                                Description = man.Description
-
-                            });
                         }
                     }
                 }
@@ -79,6 +72,6 @@ namespace QEX_Lib.ClientDB.Model
         public void Delete(ClientContext context)
         {
         }
-       
-    } 
+
+    }
 }

@@ -1,4 +1,4 @@
-﻿@using QEX.Components.UI.UI.PopupMenu;
+﻿@using QEX.Components.UI.PopupMenu;
 @using Microsoft.AspNetCore.Components.Web
 
 <div class="rich-edit" @oncontextmenu="OpenMenu" @oncontextmenu:preventDefault>
@@ -125,12 +125,25 @@ window.richEdit = {
     [Parameter] public int MarginLeft { get; set; } = 0;
     [Parameter] public int MarginRight { get; set; } = 0;
 
-    [Parameter] public string? Value { get; set; }
+    [Parameter] public bool Visible { get; set; } = true;
     [Parameter] public bool ToolBarVisible { get; set; }
+
+    [Parameter] public string? Value { get; set; }
     [Parameter] public EventCallback<string> ValueChanged { get; set; }
     [Parameter] public PopupMenu? PopupMenu { get; set; }
 
     //[Parameter] public PageFormat Format { get; set; } = PageFormat.A4;  // прописать форматы для страниц
+
+    public async Task ToBold() => await ExecCmd(EditorExecCmd.Bold);
+    public async Task ToItalic() => await ExecCmd(EditorExecCmd.Italic);
+    public async Task ToUnderline() => await ExecCmd(EditorExecCmd.Underline);
+
+    public async Task ToUnorderedList() => await ExecCmd(EditorExecCmd.InsertUnorderedList);
+    public async Task ToOrderedList() => await ExecCmd(EditorExecCmd.InsertOrderedList);
+
+    public async Task ToJustifyLeft() => await ExecCmd(EditorExecCmd.JustifyLeft);
+    public async Task ToJustifyCentre() => await ExecCmd(EditorExecCmd.JustifyCenter);
+    public async Task ToJustifyRight() => await ExecCmd(EditorExecCmd.JustifyRight);
 
 
     public async Task Exec(string cmd) => await ExecCmd(cmd);
@@ -165,8 +178,7 @@ window.richEdit = {
         await ValueChanged.InvokeAsync(html);
     }
 
-    public async Task ToBold() => await ExecCmd(EditorExecCmd.Bold);
-    public async Task ToItalic() => await ExecCmd(EditorExecCmd.Italic);
+    
 
     [Inject] IJSRuntime JS { get; set; } = default!;
 }

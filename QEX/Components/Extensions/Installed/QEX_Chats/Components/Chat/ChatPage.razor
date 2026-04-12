@@ -1,0 +1,31 @@
+﻿<div class="layout">
+    <SideBar />
+
+    <div class="chat-area">
+        <ChatView />
+        <MessageInput />
+    </div>
+</div>
+
+<style>
+.layout {
+    display: flex;
+    height: 100%;
+}
+.sidebar {
+    width: 200px;
+    background: #2f3136;
+    display: flex;
+    flex-direction: column;
+}
+.chat-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+</style>
+
+@code{
+
+}

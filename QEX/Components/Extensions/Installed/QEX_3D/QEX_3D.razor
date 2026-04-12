@@ -1,0 +1,20 @@
+﻿<div id="@CanvasId" class="qex3d-container"></div>
+
+@code {
+    private string CanvasId = "scene_" + Guid.NewGuid().ToString("N");
+
+    [Inject] IJSRuntime JS { get; set; } = default!;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JS.InvokeVoidAsync(
+                "QEX_3D.init",
+                CanvasId,
+                "_content/QEX.Components.Extensions.Installed.QEX_3D/Scene.obj"
+
+            );
+        }
+    }
+}

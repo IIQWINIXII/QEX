@@ -1,0 +1,43 @@
+﻿@inject ChatService Chat
+
+<div class="channel-list">
+    @foreach (var ch in Chat.CurrentGuild.TextChannels)
+    {
+        <div class="channel @(Chat.CurrentChannel == ch ? "active" : "")"
+             @onclick="() => Chat.SelectChannel(ch)">
+            # @ch.Name
+        </div>
+    }
+</div>
+
+<style>
+    .channel-list {
+        width: 200px;
+        background: #2f3136;
+        color: white;
+        padding: 10px;
+        height: 100%;
+    }
+
+    .channel {
+        padding: 8px;
+        cursor: pointer;
+        border-radius: 4px;
+    }
+
+        .channel:hover {
+            background: #3a3c43;
+        }
+
+    .active {
+        background: #5865F2;
+    }
+</style>
+
+@code{
+    protected override void OnInitialized()
+    {
+        Chat.OnUIChanged += StateHasChanged;
+    }
+
+}

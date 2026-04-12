@@ -1,7 +1,8 @@
-﻿@using QEX.Components.UI.UI.PageLayout
-@using QEX.Components.UI.UI.RichEdit
-@using QEX.Components.UI.UI.ComboBox
-@using QEX.Components.UI.UI.PopupMenu
+﻿@using QEX.Components.Extensions.Installed.QEX_3D
+@using QEX.Components.UI.PageLayout
+@using QEX.Components.UI.RichEdit
+@using QEX.Components.UI.ComboBox
+@using QEX.Components.UI.PopupMenu
 @using QEX_Lib.ClientDB.Model
 
 <div class="my-component">
@@ -13,7 +14,8 @@
         </TabPage>
 
         <TabPage Title="sdhfijkl111">
-            <RichEdit  PopupMenu="EditorMenu" ToolBarVisible="true" />
+            <QEX_3D/>
+
         </TabPage>
     </PageLayout>
     <ComboBox TItem="User"

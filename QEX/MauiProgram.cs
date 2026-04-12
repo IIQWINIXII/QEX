@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using QEX.Abstractions.Interface;
 using QEX.Abstractions.Service;
+using QEX_Chat.Services;
 
 namespace QEX
 {
@@ -17,6 +18,7 @@ namespace QEX
                 });
 
             builder.Services.AddSingleton<IExtensionService, ExtensionService>();
+            builder.Services.AddSingleton<ChatService, ChatService>();
             builder.Services.AddMauiBlazorWebView();
 
 #if DEBUG

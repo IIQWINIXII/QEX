@@ -65,7 +65,7 @@
             Console.WriteLine("Failed to load extensions");
         }
 
-        
+
         base.OnInitialized();
     }
 
@@ -75,12 +75,20 @@
     }
     void OpenExtension(string name)
     {
-        extensionService.CloseExtension();
-        var parameters = new Dictionary<string, object>
+        try
         {
-            
-        };
-        extensionService.OpenExtensionByName(name, parameters);
+            extensionService.CloseExtension();
+            var parameters = new Dictionary<string, object>
+            {
+
+            };
+            extensionService.OpenExtensionByName(name, parameters);
+        }
+        catch
+        {
+            extensionService.CloseExtension();
+        }
+
     }
 
     
