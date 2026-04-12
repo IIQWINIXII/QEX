@@ -1,12 +1,15 @@
 ﻿@inject ChatService Chat
 
 <div class="channel-list">
-    @foreach (var ch in Chat.CurrentGuild.TextChannels)
+    @if (Chat != null)
     {
-        <div class="channel @(Chat.CurrentChannel == ch ? "active" : "")"
-             @onclick="() => Chat.SelectChannel(ch)">
-            # @ch.Name
-        </div>
+        @foreach (var ch in Chat.CurrentGuild.TextChannels)
+        {
+            <div class="channel @(Chat.CurrentChannel == ch ? "active" : "")"
+                 @onclick="() => Chat.SelectChannel(ch)">
+                # @ch.Name
+            </div>
+        }
     }
 </div>
 

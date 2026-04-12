@@ -23,7 +23,7 @@ namespace QEX_Chat.Services
         public List<DirectChat> DirectChats { get; set; } = new();
 
         // Текущие выбранные элементы
-        public Guild? CurrentGuild { get; private set; }
+        public Guild? CurrentGuild { get; private set; } 
         public СhatChannel? CurrentChannel { get; private set; }
         public DirectChat? CurrentDirectChat { get; private set; }
 
@@ -37,7 +37,12 @@ namespace QEX_Chat.Services
             guild.TextChannels.Add(new СhatChannel { Name = "общий" });
             guild.TextChannels.Add(new СhatChannel { Name = "разработка" });
             guild.VoiceChannels.Add(new VoiceChannel { Name = "Голосовой 1" });
+            var guild1 = new Guild { Name = "Work" };
+            guild1.TextChannels.Add(new СhatChannel { Name = "общий" });
+            guild1.TextChannels.Add(new СhatChannel { Name = "разработка 11" });
+            guild1.VoiceChannels.Add(new VoiceChannel { Name = "Голосовой 111" });
 
+            Guilds.Add(guild1);
             Guilds.Add(guild);
             CurrentGuild = guild;
             CurrentChannel = guild.TextChannels.First();
@@ -105,6 +110,8 @@ namespace QEX_Chat.Services
                 CurrentChannel.Messages.Add(msg);
             else if (CurrentDirectChat != null)
                 CurrentDirectChat.Messages.Add(msg);
+            else
+                return; // Нет выбранного канала или личного чата
 
             OnMessagesChanged?.Invoke();
         }

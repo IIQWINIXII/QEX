@@ -18,6 +18,7 @@ namespace QEX
                 });
 
             builder.Services.AddSingleton<IExtensionService, ExtensionService>();
+            builder.Services.AddSingleton<UserService>();
             builder.Services.AddSingleton<ChatService, ChatService>();
             builder.Services.AddMauiBlazorWebView();
 

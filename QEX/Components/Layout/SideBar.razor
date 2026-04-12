@@ -1,7 +1,10 @@
-﻿@using QEX.Components.Layout;
+﻿@using QEX.Abstractions.Service;
+@using QEX.Components.Layout;
 @using QEX.Abstractions.Interface;
 @using QEX.Components.Extensions.Base;
-@inject IExtensionService ExtensionService
+@using QEX_Lib.ClientDB.Model
+@inject IExtensionService ExtensionService;
+@inject UserService UserService;
 
 <div class="SideBar @(IsMenuOpen ? "Open" : "")">
     <button class="Toggle" @onclick="ExpandSideBarMenu">
@@ -57,12 +60,14 @@
     {
         ExtensionService.CloseExtension();
 
+        UserService.SetUser(new User(){ID = 2, Name = "John Doe" }); 
+
         var parameters = new Dictionary<string, object>
         {
+            { "User", UserService.CurrentUser }
         };
 
-        // ExtensionService.OpenExtension<UserProfileExtension>(parameters);
-        ExtensionService.OpenExtensionByName("QEX_Writer", parameters);
+        ExtensionService.OpenExtension<UserProfileExtension>(parameters);
 
     }
 

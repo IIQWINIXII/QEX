@@ -1,10 +1,21 @@
 ﻿@using QEX_Lib.ClientDB
 @inject ChatService Chat
+@implements IDisposable
 
 <div class="chat-view">
     @if (Chat.CurrentChannel != null)
     {
         @foreach (var msg in Chat.CurrentChannel.Messages)
+        {
+            <div class="msg">
+                <b>@msg.Sender?.Name:</b> @msg.Message
+                <div class="time">@msg.Timestamp.ToShortTimeString()</div>
+            </div>
+        }
+    }
+    else if (Chat.CurrentDirectChat != null)
+    {
+        @foreach (var msg in Chat.CurrentDirectChat.Messages)
         {
             <div class="msg">
                 <b>@msg.Sender?.Name:</b> @msg.Message
@@ -38,5 +49,11 @@
     {
         Chat.OnMessagesChanged += StateHasChanged;
         Chat.OnUIChanged += StateHasChanged;
+        base.OnInitialized();
+    }
+    public void Dispose()
+    {
+        Chat.OnMessagesChanged -= StateHasChanged;
+        Chat.OnUIChanged -= StateHasChanged;
     }
 }

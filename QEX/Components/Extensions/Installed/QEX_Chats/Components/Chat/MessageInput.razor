@@ -4,7 +4,7 @@
 
 <div class="input-box">
     <button>Файл</button>
-    <input @bind="Text" @bind:event="oninput" placeholder="Введите сообщение..." />
+    <input @bind="Text" @bind:event="oninput" placeholder="Введите сообщение..." @onkeydown="HandleKeyDown"/>
     <button @onclick="Send">Отправить</button>
     <button>Ещё</button>
 </div>
@@ -44,6 +44,15 @@
     {
         
     }
+
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await Send();
+        }
+    }
+
 
     private async Task Send()
     {
