@@ -4,6 +4,7 @@
 @using QEX.Components.Extensions.Base;
 
 @inject IExtensionService extensionService
+
 <div class="store-container">
     <div class="store-header">
         <input class="store-search"
@@ -12,10 +13,13 @@
     </div>
 
     <div class="store-tabs">
-        <button @onclick="() => SwitchTab(StoreTab.Store)">
+        <button class="@(ActiveTab == StoreTab.Store ? "active" : "")"
+                @onclick="() => SwitchTab(StoreTab.Store)">
             Магазин
         </button>
-        <button @onclick="() => SwitchTab(StoreTab.Installed)">
+
+        <button class="@(ActiveTab == StoreTab.Installed ? "active" : "")"
+                @onclick="() => SwitchTab(StoreTab.Installed)">
             Моя библиотека
         </button>
     </div>
@@ -30,11 +34,11 @@
     @if (ActiveTab == StoreTab.Installed)
     {
         <div class="store-grid">
-            @foreach (var ext in extensionList.Items)
+            @foreach (var ext in SearchExtensions())
             {
                 @if (ext.Name != null)
                 {
-                    <div class="store-card" @onclick="() => OpenExtension(ext.Name)" style="border: solid 1px">
+                    <div class="store-card" @onclick="() => OpenExtension(ext.Name)">
                         <h4>@ext.Name</h4>
                         <p>@ext.Description</p>
                     </div>
@@ -43,6 +47,115 @@
         </div>
     }
 </div>
+
+<style>
+    .store-container {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        background: #2f3136;
+        color: #fff;
+        font-family: "Segoe UI", sans-serif;
+    }
+
+    .store-header {
+        padding: 16px;
+        background: #202225;
+        border-bottom: 1px solid #18191c;
+    }
+
+    .store-search {
+        width: calc(100% - 4px);
+        padding: 10px 14px;
+        border-radius: 6px;
+        border: none;
+        outline: none;
+        background: #3a3c43;
+        color: #fff;
+        font-size: 14px;
+        transition: background .2s ease;
+        box-sizing: border-box;
+    }
+
+        .store-search:focus {
+            background: #4a4c53;
+        }
+
+    .store-tabs {
+        display: flex;
+        background: #202225;
+        border-bottom: 1px solid #18191c;
+    }
+
+        .store-tabs button {
+            flex: 1;
+            padding: 12px 0;
+            background: none;
+            border: none;
+            color: #b9bbbe;
+            font-size: 15px;
+            cursor: pointer;
+            transition: background .2s ease, color .2s ease;
+        }
+
+            .store-tabs button:hover {
+                background: #2f3136;
+                color: #fff;
+            }
+
+            .store-tabs button.active {
+                background: #2f3136;
+                color: #fff;
+                font-weight: 600;
+            }
+
+    .store-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 18px;
+        padding: 20px;
+    }
+
+    .store-card {
+        background: #36393f;
+        border-radius: 10px;
+        padding: 18px;
+        cursor: pointer;
+        border: 1px solid #2a2c31;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+        transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+    }
+
+        .store-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 6px 14px rgba(0,0,0,0.35);
+            border-color: #5865f2;
+        }
+
+        .store-card h4 {
+            margin: 0 0 8px 0;
+            font-size: 17px;
+            color: #fff;
+        }
+
+        .store-card p {
+            margin: 0;
+            color: #b9bbbe;
+            font-size: 14px;
+        }
+
+    /* ВАЖНО: экранированный медиазапрос */
+    @@media (max-width: 600px) {
+        .store-grid {
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 12px;
+        }
+
+        .store-card {
+            padding: 14px;
+        }
+    }
+</style>
 
 @code {
     [Parameter] public EventCallback OnClose { get; set; }
@@ -65,7 +178,6 @@
             Console.WriteLine("Failed to load extensions");
         }
 
-
         base.OnInitialized();
     }
 
@@ -73,23 +185,31 @@
     {
         ActiveTab = tab;
     }
+
     void OpenExtension(string name)
     {
         try
         {
             extensionService.CloseExtension();
-            var parameters = new Dictionary<string, object>
-            {
-
-            };
+            var parameters = new Dictionary<string, object>();
             extensionService.OpenExtensionByName(name, parameters);
         }
         catch
         {
             extensionService.CloseExtension();
         }
-
     }
 
-    
+
+    IEnumerable<Extension> SearchExtensions()
+    {
+        if (string.IsNullOrWhiteSpace(Search))
+            return extensionList.Items;
+
+        string query = Search.Trim().ToLower();
+
+        return extensionList.Items
+            .Where(x => x.Name != null && x.Name.ToLower().Contains(query));
+    }
+
 }

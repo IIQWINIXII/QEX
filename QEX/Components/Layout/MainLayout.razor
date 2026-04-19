@@ -36,7 +36,8 @@
     protected override void OnInitialized()
     {
         UserList.Load(clientContext);
-       
+        ExtensionService.OpenExtension<ExtensionsStore>();
+        
         base.OnInitialized();
     }
     public void AddUserLoggedIn(User user)
