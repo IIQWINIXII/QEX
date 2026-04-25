@@ -4,4 +4,5 @@
   </Project>
   <Project Path="QEX_Lib/QEX_Lib.csproj" />
   <Project Path="QEX_Server/QEX_Server.csproj" />
+  <Project Path="UI/UI.csproj" />
 </Solution>
