@@ -1,17 +1,18 @@
 ﻿@using QEX.Abstractions.Interface
-@using QEX_Lib.ClientDB.Model;
-@using QEX.Abstractions.Service;
-@using QEX.Components.Extensions.Base;
+@using QEX.Components.Extensions.Classes
+@inject IExtensionService ExtensionService
 
-@inject IExtensionService extensionService
 
 <div class="store-container">
+
+    <!-- Поиск -->
     <div class="store-header">
         <input class="store-search"
                @bind="Search"
                placeholder="Поиск расширений..." />
     </div>
 
+    <!-- Вкладки -->
     <div class="store-tabs">
         <button class="@(ActiveTab == StoreTab.Store ? "active" : "")"
                 @onclick="() => SwitchTab(StoreTab.Store)">
@@ -24,38 +25,37 @@
         </button>
     </div>
 
+    <!-- Магазин -->
     @if (ActiveTab == StoreTab.Store)
     {
         <div class="store-grid">
-            store
+            <p>Магазин пока пуст</p>
         </div>
     }
 
+    <!-- Установленные -->
     @if (ActiveTab == StoreTab.Installed)
     {
         <div class="store-grid">
             @foreach (var ext in SearchExtensions())
             {
-                @if (ext.Name != null)
-                {
-                    <div class="store-card" @onclick="() => OpenExtension(ext.Name)">
-                        <h4>@ext.Name</h4>
-                        <p>@ext.Description</p>
-                    </div>
-                }
+                <div class="store-card" @onclick="() => OpenExtension(ext.Manifest.Name)">
+                    <h4>@ext.Manifest.Name</h4>
+                    <p>@ext.Manifest.Description</p>
+                </div>
             }
         </div>
     }
 </div>
-
 <style>
-    .store-container {
-        display: flex;
-        flex-direction: column;
+    .store-root {
+        width: 100%;
         height: 100%;
         background: #2f3136;
         color: #fff;
         font-family: "Segoe UI", sans-serif;
+        display: flex;
+        flex-direction: column;
     }
 
     .store-header {
@@ -65,7 +65,7 @@
     }
 
     .store-search {
-        width: calc(100% - 4px);
+        width: 100%;
         padding: 10px 14px;
         border-radius: 6px;
         border: none;
@@ -74,7 +74,6 @@
         color: #fff;
         font-size: 14px;
         transition: background .2s ease;
-        box-sizing: border-box;
     }
 
         .store-search:focus {
@@ -116,6 +115,60 @@
         padding: 20px;
     }
 
+    .card {
+        background: #36393f;
+        border-radius: 10px;
+        padding: 18px;
+        cursor: pointer;
+        border: 1px solid #2a2c31;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+        transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+    }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 6px 14px rgba(0,0,0,0.35);
+            border-color: #5865f2;
+        }
+
+    .card-title {
+        font-size: 17px;
+        font-weight: bold;
+        margin-bottom: 6px;
+        color: #fff;
+    }
+
+    .card-desc {
+        font-size: 14px;
+        color: #b9bbbe;
+    }
+
+    .empty {
+        color: #b9bbbe;
+        font-size: 16px;
+        padding: 20px;
+    }
+
+    .store-container {
+        width: 100%;
+        height: 100%;
+        background: #2f3136;
+        color: #fff;
+        font-family: "Segoe UI", sans-serif;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .store-grid {
+        flex: 1; /* ← растягиваем на всю высоту */
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 18px;
+        padding: 20px;
+        background: #2f3136; /* ← тёмный фон */
+        overflow-y: auto; /* ← скролл если много карточек */
+    }
+
     .store-card {
         background: #36393f;
         border-radius: 10px;
@@ -132,84 +185,59 @@
             border-color: #5865f2;
         }
 
-        .store-card h4 {
-            margin: 0 0 8px 0;
-            font-size: 17px;
-            color: #fff;
-        }
-
-        .store-card p {
-            margin: 0;
-            color: #b9bbbe;
-            font-size: 14px;
-        }
-
-    /* ВАЖНО: экранированный медиазапрос */
-    @@media (max-width: 600px) {
-        .store-grid {
-            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-            gap: 12px;
-        }
-
-        .store-card {
-            padding: 14px;
-        }
+    .store-card-title {
+        font-size: 17px;
+        font-weight: bold;
+        margin-bottom: 6px;
+        color: #fff;
     }
+
+    .store-card-desc {
+        font-size: 14px;
+        color: #b9bbbe;
+    }
+
 </style>
 
 @code {
     [Parameter] public EventCallback OnClose { get; set; }
-
     string Search = "";
 
     enum StoreTab { Store, Installed }
     StoreTab ActiveTab = StoreTab.Installed;
 
-    ExtensionList extensionList = new();
+    List<ExtensionInfo> installedExtensions = new();
 
     protected override void OnInitialized()
     {
-        try
-        {
-            extensionList.LoadByPath();
-        }
-        catch
-        {
-            Console.WriteLine("Failed to load extensions");
-        }
-
+        var loader = new ExtensionLoader(ExtensionService);
+        installedExtensions = loader.LoadInstalled();
         base.OnInitialized();
     }
 
-    void SwitchTab(StoreTab tab)
-    {
-        ActiveTab = tab;
-    }
+    void SwitchTab(StoreTab tab) => ActiveTab = tab;
 
     void OpenExtension(string name)
     {
         try
         {
-            extensionService.CloseExtension();
-            var parameters = new Dictionary<string, object>();
-            extensionService.OpenExtensionByName(name, parameters);
+            ExtensionService.CloseExtension();
+            ExtensionService.OpenExtensionByName(name, new Dictionary<string, object>());
         }
-        catch
+        catch (Exception ex)
         {
-            extensionService.CloseExtension();
+            Console.WriteLine($"Failed to open extension: {ex.Message}");
+            ExtensionService.CloseExtension();
         }
     }
 
-
-    IEnumerable<Extension> SearchExtensions()
+    IEnumerable<ExtensionInfo> SearchExtensions()
     {
         if (string.IsNullOrWhiteSpace(Search))
-            return extensionList.Items;
+            return installedExtensions;
 
-        string query = Search.Trim().ToLower();
-
-        return extensionList.Items
-            .Where(x => x.Name != null && x.Name.ToLower().Contains(query));
+        var query = Search.Trim().ToLower();
+        return installedExtensions
+            .Where(x => x.Manifest.Name.ToLower().Contains(query));
     }
-
 }

@@ -1,7 +1,7 @@
 ﻿.SideBar {
     width: 60px;
-    background: #1e1e1e;
-    color: white;
+    background: #15171a; /* тёмный нейтральный фон */
+    color: #e6eef8; /* мягкий светлый текст */
     transition: width .25s ease;
     overflow: hidden;
 }
@@ -13,9 +13,9 @@
     .SideBar button {
         width: 100%;
         height: 50px;
-        background: #333;
+        background: #23272a; /* кнопка чуть светлее фона */
         border: none;
-        color: white;
+        color: #e6eef8;
         cursor: pointer;
     }
 
@@ -32,3 +32,23 @@
     opacity: 1;
 }
 
+/* дополнительные цвета для элементов меню (если используются) */
+.MenuItem {
+    background: transparent;
+    color: #e6eef8;
+}
+
+    .MenuItem .Icon {
+        background: #1f2326; /* иконка на тёмном фоне */
+        color: #9fc9ff; /* лёгкий голубой акцент для иконок */
+    }
+
+    .MenuItem:hover,
+    .MenuItem:focus {
+        background: #262a2d; /* hover — заметнее, но мягко */
+    }
+
+    .MenuItem.active {
+        background: linear-gradient(90deg, rgba(46,134,255,0.12), rgba(46,134,255,0.06)); /* акцентный градиент */
+        box-shadow: inset 0 0 0 1px rgba(46,134,255,0.06);
+    }

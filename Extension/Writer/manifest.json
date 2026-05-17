@@ -1,0 +1,8 @@
+{
+  "Id": "qex.writer",
+  "Name": "QEX Writer",
+  "Description": "Test writer extension",
+  "Version": "1.0.0",
+  "AssemblyFile": "Writer.dll",
+  "RootComponent": "Writer.Pages.WriterHome"
+}

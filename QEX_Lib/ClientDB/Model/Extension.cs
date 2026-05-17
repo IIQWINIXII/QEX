@@ -1,77 +1,82 @@
-﻿using QEX_Lib.ClientDB.IModel;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.Json;
-using System.Threading.Tasks;
-using QEX_Lib.Classes;
+﻿using System.Text.Json;
+using QEX_Lib.ClientDB.IModel;
 
 namespace QEX_Lib.ClientDB.Model
 {
     public class Extension : IBaseModel
     {
         public int ID { get; set; }
-        public string? Name { get; set; }
-        public byte[]? Icon { get; set; }
-        public string? Author { get; set; }
-        public string? Version { get; set; }
-        public string? Type { get; set; }
-        public string? Tag { get; set; }
-        public string? Description { get; set; }
-        public void Load(ClientContext context)
-        {
 
-        }
-        public void Save(ClientContext context)
-        {
+        public string Name { get; set; } = "";
+        public string Description { get; set; } = "";
+        public string Version { get; set; } = "";
+        public string Author { get; set; } = "";
 
-        }
+        // Полный путь к папке расширения
+        public string FolderPath { get; set; } = "";
+
+        // Имя DLL
+        public string AssemblyFile { get; set; } = "";
+
+        // Полное имя компонента
+        public string RootComponent { get; set; } = "";
+
+        public void Load(ClientContext context) { }
+        public void Save(ClientContext context) { }
     }
     public class ExtensionList : IBaseModelList
     {
-        public List<Extension> Items { get; set; } = [];
+        public List<Extension> Items { get; set; } = new();
+
         public void Load(ClientContext context)
         {
-            Items = [.. context.Extensions.Select(e => e)];
+            // База нам больше не нужна
         }
+
         public void LoadByPath()
         {
             Items.Clear();
-            //TODO: получение всех директорий для получения расширений и дальнейшая проверка всех указанных директорий
-            string path = Path.Combine(AppContext.BaseDirectory, "Components", "Extensions", "Installed");
 
-            if (Directory.Exists(path))
+            string root = Path.Combine(
+                AppContext.BaseDirectory,
+                "Components", "Extensions", "Installed");
+
+            if (!Directory.Exists(root))
+                return;
+
+            foreach (var dir in Directory.GetDirectories(root))
             {
-                string[] dirs = Directory.GetDirectories(path);
+                string manifestPath = Path.Combine(dir, "extension.manifest.json");
+                if (!File.Exists(manifestPath))
+                    continue;
 
-                foreach (var dir in dirs)
+                try
                 {
-                    string manifestPath = Path.Combine(dir, "manifest.json");
-                    if (File.Exists(manifestPath))
-                    {
-                        string str = File.ReadAllText(manifestPath);
-                        var man = JsonSerializer.Deserialize<ExtensionManifest>(str);
-                        if (man != null)
-                        {
-                            Items.Add(new Extension
-                            {
-                                Name = man.Name,
-                                Version = man.Version,
-                                Description = man.Description
+                    //var json = File.ReadAllText(manifestPath);
+                    //var man = JsonSerializer.Deserialize<ExtensionManifest>(json);
 
-                            });
-                        }
-                    }
+                    //if (man == null)
+                    //    continue;
+
+                    //Items.Add(new Extension
+                    //{
+                    //    Name = man.Name,
+                    //    Description = man.Description,
+                    //    Version = man.Version,
+                    //    Author = man.Author ?? "",
+                    //    FolderPath = dir,
+                    //    AssemblyFile = man.AssemblyFile,
+                    //    RootComponent = man.RootComponent
+                    //});
+                }
+                catch
+                {
+                    // Игнорируем битые расширения
                 }
             }
         }
-        public void Save(ClientContext context)
-        {
-        }
-        public void Delete(ClientContext context)
-        {
-        }
 
+        public void Save(ClientContext context) { }
+        public void Delete(ClientContext context) { }
     }
 }

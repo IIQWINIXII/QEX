@@ -1,0 +1,86 @@
+﻿@using Writer.Classes
+@using Writer.Interface
+<div class="notebook">
+    <div class="toolbar">
+        <button @onclick="New">New</button>
+        <button @onclick="Open">Open</button>
+        <button @onclick="Save">Save</button>
+        <button @onclick="SaveAs">Save As</button>
+        <input @bind="SearchQuery" placeholder="Search" />
+        <button @onclick="Find">Find</button>
+        <button @onclick="Close">Close</button>
+    </div>
+
+    <textarea class="editor" @bind="TextContent" rows="20"></textarea>
+</div>
+
+@code {
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Inject] public IEditorService EditorService { get; set; }
+    [Inject] public IExtensionHost Host { get; set; } // если доступен
+
+    private string TextContent { get; set; } = string.Empty;
+    private DocumentInfo CurrentDoc { get; set; }
+    private string SearchQuery { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        // регистрация обработчиков внутри сервиса делается при создании сервиса
+    }
+
+    private async Task New()
+    {
+        CurrentDoc = null;
+        TextContent = string.Empty;
+    }
+
+    private async Task Open()
+    {
+        // В Blazor WebView/MAUI: использовать IFilePicker через JS interop или хост‑API
+        var file = await Host.RequestActionAsync("PickFile", new { Filter = "All files|*.*" });
+        if (file is FilePickResult pick)
+        {
+            using var stream = pick.OpenReadStream();
+            var handler = EditorService.GetHandler(pick.FileName);
+            CurrentDoc = await handler.LoadAsync(stream, pick.FileName);
+            TextContent = CurrentDoc.Text ?? string.Empty;
+        }
+    }
+
+    private async Task Save()
+    {
+        if (CurrentDoc == null)
+        {
+            await SaveAs();
+            return;
+        }
+        CurrentDoc.Text = TextContent;
+        using var ms = new MemoryStream();
+        var handler = EditorService.GetHandler(CurrentDoc.FileName ?? "untitled.txt");
+        await handler.SaveAsync(CurrentDoc, ms);
+        ms.Position = 0;
+        await Host.RequestActionAsync("SaveFile", new { FileName = CurrentDoc.FileName, Stream = ms }); // хост сохраняет
+    }
+
+    private async Task SaveAs()
+    {
+        var fileName = await Host.RequestActionAsync("PickSavePath", new { DefaultName = CurrentDoc?.FileName ?? "untitled.txt" });
+        // аналогично: получить stream и вызвать handler.SaveAsync
+    }
+
+    private void Find()
+    {
+        // простая реализация поиска
+        if (string.IsNullOrEmpty(SearchQuery)) return;
+        var idx = TextContent?.IndexOf(SearchQuery, StringComparison.OrdinalIgnoreCase) ?? -1;
+        if (idx >= 0)
+        {
+            // можно выделить текст через JS interop или прокрутить
+        }
+    }
+
+    private async Task Close()
+    {
+        if (OnClose.HasDelegate) await OnClose.InvokeAsync(null);
+    }
+}

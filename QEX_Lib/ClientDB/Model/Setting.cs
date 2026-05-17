@@ -29,6 +29,10 @@ namespace QEX_Lib.ClientDB.Model
         /// UI Language
         /// </summary>
         public string Language { get; set; } = "eng";
+        /// <summary>
+        /// Option identificator
+        /// </summary>
+        public int ID_OPT { get; set; }
 
         public void Load(ClientContext context)
         {
@@ -42,10 +46,10 @@ namespace QEX_Lib.ClientDB.Model
     }
     public class SettingList : IBaseModelList
     {
-        public List<Setting> Items { get; set; } = new List<Setting>();
+        public List<Setting> Items { get; set; } = [];
         public void Load(ClientContext context)
         {
-            Items = context.Settings.Select(s => s).ToList();
+            Items = [.. context.Settings.Select(s => s)];
         }
         public void Save(ClientContext context)
         {

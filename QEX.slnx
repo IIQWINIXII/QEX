@@ -1,6 +1,7 @@
 <Solution>
+  <Project Path="Extension/Writer/Writer.csproj" Id="0477c6ab-35cf-476a-a7ec-bd222fe67989" />
   <Project Path="QEX/QEX.csproj">
-    <Deploy Solution="Debug|*" />
+    <Deploy />
   </Project>
   <Project Path="QEX_Lib/QEX_Lib.csproj" />
   <Project Path="QEX_Server/QEX_Server.csproj" />

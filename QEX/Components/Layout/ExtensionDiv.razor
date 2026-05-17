@@ -1,27 +1,26 @@
-﻿@* Components/ExtensionDiv.razor *@
-@using Abstractions.Interface;
-@using Abstractions.Service;
+﻿@using QEX.Abstractions.Interface
 @inject IExtensionService ExtensionService
+
 <div class="ExtensionContainer @(ExtensionService.IsVisible ? "Open" : "")" style="height: 100%;">
     @if (ExtensionService.IsVisible && ExtensionService.CurrentComponentType != null)
     {
         <div class="ExtensionCaption" style="height:100%">
             @{
                 var parameters = ExtensionService.CurrentParameters ??
-                        new Dictionary<string, object>();
+                                 new Dictionary<string, object>();
 
                 parameters["OnClose"] = EventCallback.Factory.Create(this, CloseExtension);
-                var ComponentType = ExtensionService.CurrentComponentType;
+                var componentType = ExtensionService.CurrentComponentType;
             }
-            <DynamicComponent Type="@ComponentType" Parameters="@parameters"></DynamicComponent>
+            <DynamicComponent Type="@componentType" Parameters="@parameters" />
         </div>
-    } 
+    }
 </div>
 
 @code {
     protected override void OnInitialized()
     {
-        ExtensionService.OnOpenExtension += (type, parameters) => StateHasChanged();
+        ExtensionService.OnOpenExtension += (_, __) => StateHasChanged();
         ExtensionService.OnCloseExtension += StateHasChanged;
         base.OnInitialized();
     }
@@ -30,6 +29,7 @@
     {
         ExtensionService.CloseExtension();
     }
+
     public void Dispose()
     {
         ExtensionService.OnCloseExtension -= StateHasChanged;

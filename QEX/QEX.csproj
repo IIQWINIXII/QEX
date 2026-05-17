@@ -58,82 +58,24 @@
     </ItemGroup>
 
     <ItemGroup>
-      <AndroidResource Remove="Components\Extensions\Installed\QEX_3D\bin\**" />
-      <AndroidResource Remove="Components\Extensions\Installed\QEX_3D\obj\**" />
-      <AndroidResource Remove="Components\Extensions\Installed\QEX_3D\QEX_3D\obj\**" />
-      <AndroidResource Remove="Components\Extensions\Installed\QEX_Chats\bin\**" />
-      <AndroidResource Remove="Components\Extensions\Installed\QEX_Chats\obj\**" />
-      <AndroidResource Remove="Components\Extensions\Installed\QEX_Writer\bin\**" />
-      <AndroidResource Remove="Components\Extensions\Installed\QEX_Writer\obj\**" />
-      <AndroidResource Remove="Components\Extensions\Installed\QEX_Writer\QEX_Writer\bin\**" />
-      <AndroidResource Remove="Components\Extensions\Installed\QEX_Writer\QEX_Writer\obj\**" />
       <AndroidResource Remove="Components\UI\bin\**" />
       <AndroidResource Remove="Components\UI\obj\**" />
       <AndroidResource Remove="Components\UI\UI\**" />
-      <Compile Remove="Components\Extensions\Installed\QEX_3D\bin\**" />
-      <Compile Remove="Components\Extensions\Installed\QEX_3D\obj\**" />
-      <Compile Remove="Components\Extensions\Installed\QEX_3D\QEX_3D\obj\**" />
-      <Compile Remove="Components\Extensions\Installed\QEX_Chats\bin\**" />
-      <Compile Remove="Components\Extensions\Installed\QEX_Chats\obj\**" />
-      <Compile Remove="Components\Extensions\Installed\QEX_Writer\bin\**" />
-      <Compile Remove="Components\Extensions\Installed\QEX_Writer\obj\**" />
-      <Compile Remove="Components\Extensions\Installed\QEX_Writer\QEX_Writer\bin\**" />
-      <Compile Remove="Components\Extensions\Installed\QEX_Writer\QEX_Writer\obj\**" />
       <Compile Remove="Components\UI\bin\**" />
       <Compile Remove="Components\UI\obj\**" />
       <Compile Remove="Components\UI\UI\**" />
-      <Content Remove="Components\Extensions\Installed\QEX_3D\bin\**" />
-      <Content Remove="Components\Extensions\Installed\QEX_3D\obj\**" />
-      <Content Remove="Components\Extensions\Installed\QEX_3D\QEX_3D\obj\**" />
-      <Content Remove="Components\Extensions\Installed\QEX_Chats\bin\**" />
-      <Content Remove="Components\Extensions\Installed\QEX_Chats\obj\**" />
-      <Content Remove="Components\Extensions\Installed\QEX_Writer\bin\**" />
-      <Content Remove="Components\Extensions\Installed\QEX_Writer\obj\**" />
-      <Content Remove="Components\Extensions\Installed\QEX_Writer\QEX_Writer\bin\**" />
-      <Content Remove="Components\Extensions\Installed\QEX_Writer\QEX_Writer\obj\**" />
       <Content Remove="Components\UI\bin\**" />
       <Content Remove="Components\UI\obj\**" />
       <Content Remove="Components\UI\UI\**" />
-      <EmbeddedResource Remove="Components\Extensions\Installed\QEX_3D\bin\**" />
-      <EmbeddedResource Remove="Components\Extensions\Installed\QEX_3D\obj\**" />
-      <EmbeddedResource Remove="Components\Extensions\Installed\QEX_3D\QEX_3D\obj\**" />
-      <EmbeddedResource Remove="Components\Extensions\Installed\QEX_Chats\bin\**" />
-      <EmbeddedResource Remove="Components\Extensions\Installed\QEX_Chats\obj\**" />
-      <EmbeddedResource Remove="Components\Extensions\Installed\QEX_Writer\bin\**" />
-      <EmbeddedResource Remove="Components\Extensions\Installed\QEX_Writer\obj\**" />
-      <EmbeddedResource Remove="Components\Extensions\Installed\QEX_Writer\QEX_Writer\bin\**" />
-      <EmbeddedResource Remove="Components\Extensions\Installed\QEX_Writer\QEX_Writer\obj\**" />
       <EmbeddedResource Remove="Components\UI\bin\**" />
       <EmbeddedResource Remove="Components\UI\obj\**" />
       <EmbeddedResource Remove="Components\UI\UI\**" />
-      <MauiXaml Remove="Components\Extensions\Installed\QEX_3D\bin\**" />
-      <MauiXaml Remove="Components\Extensions\Installed\QEX_3D\obj\**" />
-      <MauiXaml Remove="Components\Extensions\Installed\QEX_3D\QEX_3D\obj\**" />
-      <MauiXaml Remove="Components\Extensions\Installed\QEX_Chats\bin\**" />
-      <MauiXaml Remove="Components\Extensions\Installed\QEX_Chats\obj\**" />
-      <MauiXaml Remove="Components\Extensions\Installed\QEX_Writer\bin\**" />
-      <MauiXaml Remove="Components\Extensions\Installed\QEX_Writer\obj\**" />
-      <MauiXaml Remove="Components\Extensions\Installed\QEX_Writer\QEX_Writer\bin\**" />
-      <MauiXaml Remove="Components\Extensions\Installed\QEX_Writer\QEX_Writer\obj\**" />
       <MauiXaml Remove="Components\UI\bin\**" />
       <MauiXaml Remove="Components\UI\obj\**" />
       <MauiXaml Remove="Components\UI\UI\**" />
-      <None Remove="Components\Extensions\Installed\QEX_3D\bin\**" />
-      <None Remove="Components\Extensions\Installed\QEX_3D\obj\**" />
-      <None Remove="Components\Extensions\Installed\QEX_3D\QEX_3D\obj\**" />
-      <None Remove="Components\Extensions\Installed\QEX_Chats\bin\**" />
-      <None Remove="Components\Extensions\Installed\QEX_Chats\obj\**" />
-      <None Remove="Components\Extensions\Installed\QEX_Writer\bin\**" />
-      <None Remove="Components\Extensions\Installed\QEX_Writer\obj\**" />
-      <None Remove="Components\Extensions\Installed\QEX_Writer\QEX_Writer\bin\**" />
-      <None Remove="Components\Extensions\Installed\QEX_Writer\QEX_Writer\obj\**" />
       <None Remove="Components\UI\bin\**" />
       <None Remove="Components\UI\obj\**" />
       <None Remove="Components\UI\UI\**" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Content Remove="Components\Extensions\Installed\QEX_Writer\QEX_Writer\_Imports.razor" />
     </ItemGroup>
 
     <ItemGroup>
@@ -158,6 +100,10 @@
       <None Update="Resources\Data\QEX_DB_CL">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Components\Extensions\Installed\" />
     </ItemGroup>
 
 </Project>

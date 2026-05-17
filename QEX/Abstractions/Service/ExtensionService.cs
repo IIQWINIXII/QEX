@@ -2,20 +2,15 @@
 using QEX.Abstractions.Interface;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace QEX.Abstractions.Service
 {
     public class ExtensionService : IExtensionService
     {
-        private readonly Dictionary<string, Type> _Extension =  [];
+        private readonly Dictionary<string, Type> _extensions = new();
 
         public Type? CurrentComponentType { get; private set; }
-
         public Dictionary<string, object>? CurrentParameters { get; private set; }
-
         public bool IsVisible { get; private set; }
 
         public event Action<Type, Dictionary<string, object>>? OnOpenExtension;
@@ -26,34 +21,36 @@ namespace QEX.Abstractions.Service
             CurrentComponentType = null;
             CurrentParameters = null;
             IsVisible = false;
-
             OnCloseExtension?.Invoke();
         }
 
-        public void OpenExtension<TComponent>(Dictionary<string, object>? Parameters = null) where TComponent : ComponentBase
-        {
-            OpenExtension(typeof(TComponent), Parameters);
-        }
+        public void OpenExtension<TComponent>(Dictionary<string, object>? parameters = null)
+            where TComponent : ComponentBase
+            => OpenExtension(typeof(TComponent), parameters);
 
-        public void OpenExtension(Type ComponentType, Dictionary<string, object>? Parameters = null)
+        public void OpenExtension(Type componentType, Dictionary<string, object>? parameters = null)
         {
-            CurrentComponentType = ComponentType ?? throw new("Type is not ComponentBase");
-            CurrentParameters = Parameters ?? [];
+            if (!typeof(ComponentBase).IsAssignableFrom(componentType))
+                throw new("Type is not ComponentBase");
+
+            CurrentComponentType = componentType;
+            CurrentParameters = parameters ?? new();
             IsVisible = true;
 
-            OnOpenExtension?.Invoke(ComponentType, CurrentParameters);
+            OnOpenExtension?.Invoke(componentType, CurrentParameters);
         }
+
         public void OpenExtensionByName(string name, Dictionary<string, object>? parameters)
         {
-            var type = AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(a => a.GetTypes())
-                .FirstOrDefault(t => t.Name == name) ?? throw new Exception($"Component '{name}' not found.");
+            if (!_extensions.TryGetValue(name, out var type))
+                throw new Exception($"Extension '{name}' not registered.");
+
             OpenExtension(type, parameters);
         }
-        public void RegisterExtension<TComponent>(string Tag) where TComponent : ComponentBase
+
+        public void RegisterExtension(Type componentType, string tag)
         {
-            _Extension[Tag] = typeof(TComponent);
+            _extensions[tag] = componentType;
         }
     }
 }
-

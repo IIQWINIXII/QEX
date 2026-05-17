@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Components;
 
 namespace QEX.Abstractions.Interface
@@ -13,45 +10,18 @@ namespace QEX.Abstractions.Interface
         Dictionary<string, object>? CurrentParameters { get; }
         bool IsVisible { get; }
 
-        /// <summary>
-        /// Событие открытия расширения
-        /// </summary>
         event Action<Type, Dictionary<string, object>> OnOpenExtension;
-
-        /// <summary>
-        /// Событие закрытия расширения
-        /// </summary>
         event Action OnCloseExtension;
 
-        /// <summary>
-        /// Открыть расширение с указанным компонентом
-        /// </summary>
-        /// <typeparam name="TComponent">Тип компонента Blazor</typeparam>
-        /// <param name="Parameters">Параметры для компонента</param>
-        public void OpenExtension<TComponent>(Dictionary<string, object>? Parameters = null) 
+        void OpenExtension<TComponent>(Dictionary<string, object>? parameters = null)
             where TComponent : ComponentBase;
 
-        /// <summary>
-        /// Открыть раширение с указанным типом компонента
-        /// </summary>
-        public void OpenExtension(Type ComponentType, Dictionary<string, object>? Parameters = null);
-        /// <summary>
-        /// Открыть расширениия по его имени 
-        /// </summary>
-        /// <param name="name"></param>
-        /// <param name="parameters"></param>
-        public void OpenExtensionByName(string name, Dictionary<string, object>? parameters);
-        /// <summary>
-        /// Закрыть текущее расширение
-        /// </summary>
-        public void CloseExtension();
-        /// <summary>
-        /// Регистрация компонента расширения с определенным тегом 
-        /// для последующего использования при открытии расширения по тегу
-        /// </summary>
-        /// <typeparam name="TComponent"></typeparam>
-        /// <param name="Tag"></param>
-        public void RegisterExtension<TComponent>(string Tag) where TComponent : ComponentBase;
-        
+        void OpenExtension(Type componentType, Dictionary<string, object>? parameters = null);
+
+        void OpenExtensionByName(string name, Dictionary<string, object>? parameters);
+
+        void CloseExtension();
+
+        void RegisterExtension(Type componentType, string tag);
     }
 }

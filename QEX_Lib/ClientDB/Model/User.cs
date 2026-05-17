@@ -32,10 +32,10 @@ namespace QEX_Lib.ClientDB.Model
     }
     public class UserList : IBaseModelList
     {
-        public List<User> Items { get; set; } = new List<User>();
+        public List<User> Items { get; set; } = [];
         public void Load(ClientContext context)
         {
-            Items = context.Users.Select(u => u).ToList();
+            Items = [.. context.Users.Select(u => u)];
         }
         public void Save(ClientContext context)
         {

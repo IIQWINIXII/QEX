@@ -2,51 +2,82 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    align-self: center;
     height: 100%;
-    background: linear-gradient(135deg, #4b0ea4 0%, #1ca464 100%);
+    background: linear-gradient(135deg, #5865F2 0%, #2f3136 100%);
+    font-family: "Segoe UI", sans-serif;
 }
+
 .AuthDiv {
-    justify-content: center;
-    align-items: center;
-    align-self: center;
-    height: 400px;
-    width: 550px;
-    background-color: #ffffff60;
-    border: 2px solid #ededed80;
-    border-radius: 15px;
+    width: 420px;
+    padding: 30px;
+    background: #2f3136;
+    border-radius: 12px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.35);
+    border: 1px solid #202225;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
 }
 
 .AuthInputDiv {
-    height: calc(90% - 2px);
-    width: calc(100% - 2px);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
 }
 
 .AuthInput {
-    font-size: 30px;
-    border-radius: 5px;
-    width: calc(100% - 20px);
-    margin: 10px 10px 10px 10px;
-    border: 0;
+    width: 93%;
+    padding: 12px 14px;
+    font-size: 16px;
+    border-radius: 6px;
+    border: 1px solid #3a3c43;
+    background: #202225;
+    color: #fff;
+    outline: none;
+    transition: border .2s ease, background .2s ease;
 }
+
+    .AuthInput:focus {
+        border-color: #5865F2;
+        background: #26282c;
+    }
 
 .AuthButtonDiv {
     display: flex;
+    gap: 10px;
 }
 
 .AuthActiveButton {
-    margin: 0px 10px 0px 10px;
-    width: 70%;
-    border-radius: 5px 5px 5px 5px;
-    border: 0;
-    height: 30px;
+    flex: 1;
+    padding: 10px 0;
+    background: #5865F2;
+    color: white;
+    border: none;
+    border-radius: 6px;
     font-size: 16px;
+    cursor: pointer;
+    transition: background .2s ease, transform .1s ease;
 }
+
+    .AuthActiveButton:hover {
+        background: #4752c4;
+        transform: translateY(-2px);
+    }
+
 .AuthUnActiveButton {
-    margin: 0px 10px 0px 0px;
-    border: 0;
-    border-radius: 5px 5px 5px 5px;
-    width: 30%;
-    height: 30px;
+    flex: 1;
+    padding: 10px 0;
+    background: #3a3c43;
+    color: #b9bbbe;
+    border: none;
+    border-radius: 6px;
     font-size: 16px;
+    cursor: pointer;
+    transition: background .2s ease, transform .1s ease;
 }
+
+    .AuthUnActiveButton:hover {
+        background: #4a4c53;
+        color: #fff;
+        transform: translateY(-2px);
+    }
