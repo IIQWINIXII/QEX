@@ -1,0 +1,128 @@
+﻿@using Microsoft.JSInterop
+@inject IJSRuntime JS
+<div class="draw-app">
+    <div class="toolbar">
+        <!-- Инструменты (кавычки экранированы через @() для безопасного парсинга Razor) -->
+        <div class="group">
+            <button @onclick="@(() => SetTool("pencil"))" class="@(_tool == "pencil" ? "active" : "")">✏️ Кисть</button>
+            <button @onclick="@(() => SetTool("line"))" class="@(_tool == "line" ? "active" : "")">📏 Линия</button>
+            <button @onclick="@(() => SetTool("rect"))" class="@(_tool == "rect" ? "active" : "")">⬜ Прям.</button>
+            <button @onclick="@(() => SetTool("circle"))" class="@(_tool == "circle" ? "active" : "")">⭕ Круг</button>
+        </div>
+
+        <!-- Палитра + произвольный цвет -->
+        <div class="group">
+            @foreach (var c in _palette)
+            {
+                <button @onclick="@(() => SetColor(c))" class="color-btn" style="background:@c; border:@(c == _color ? "2px solid #0078d7" : "1px solid #aaa")"></button>
+            }
+            <input type="color" @bind="_color" @bind:after="SyncSettings" style="width:32px;height:28px;padding:0;border:none;cursor:pointer;" title="Свой цвет">
+        </div>
+
+        <!-- Размер кисти -->
+        <div class="group">
+            <label style="font-size:12px;margin-right:5px;">@_size px</label>
+            <input type="range" min="1" max="20" value="@_size" @oninput="OnSizeInput" style="width:80px;">
+        </div>
+
+        <!-- Действия -->
+        <div class="group" style="margin-left:auto;">
+            <button @onclick="Clear">🗑 Очистить</button>
+            <button @onclick="HandleClose" class="btn-close">✖ Закрыть</button>
+        </div>
+    </div>
+
+    <canvas @ref="_canvas" id="drawCanvas" width="800" height="500"
+            @onmousedown="OnMouseDown" @onmousemove="OnMouseMove" @onmouseup="OnMouseUp" @onmouseleave="OnMouseLeave"
+            style="border: 1px solid #444; background: #fff; cursor: crosshair; display: block; max-width: 100%;">
+    </canvas>
+</div>
+
+<style>
+    .draw-app { max-width: 820px; margin: 1rem auto; font-family: system-ui, sans-serif; }
+    .toolbar { display: flex; align-items: center; gap: 10px; padding: 10px; background: #f5f5f5; border-radius: 8px 8px 0 0; border: 1px solid #ddd; border-bottom: none; flex-wrap: wrap; }
+    .group { display: flex; align-items: center; gap: 6px; }
+    .toolbar button { padding: 6px 10px; cursor: pointer; border: 1px solid #ccc; background: #fff; border-radius: 4px; font-size: 13px; transition: all 0.2s; }
+    .toolbar button:hover { background: #e9ecef; }
+    .toolbar button.active { background: #0078d7; color: white; border-color: #005a9e; }
+    .btn-close { background: #dc3545; color: white; border-color: #dc3545; }
+    .btn-close:hover { background: #bb2d3b; }
+    .color-btn { width: 24px; height: 24px; border-radius: 50%; padding: 0; cursor: pointer; }
+</style>
+
+@code {
+    [Parameter, EditorRequired] public EventCallback OnClose { get; set; }
+
+    private ElementReference _canvas;
+    private string _tool = "pencil";
+    private string _color = "#000000";
+    private int _size = 3;
+    private static readonly string[] _palette = { "#000000", "#FFFFFF", "#FF0000", "#00AA00", "#0000FF", "#FFD700", "#FF00FF", "#00CED1", "#FF8C00", "#800080" };
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JS.InvokeVoidAsync("eval", @"
+                window.__DrawApp = {
+                    ctx: null, isDrawing: false,
+                    startX: 0, startY: 0, savedData: null,
+                    tool: 'pencil', color: '#000000', size: 3,
+                    init: function(id) {
+                        this.ctx = document.getElementById(id).getContext('2d');
+                        this.ctx.lineCap = 'round'; this.ctx.lineJoin = 'round';
+                    },
+                    start: function(x, y) {
+                        this.isDrawing = true; this.startX = x; this.startY = y;
+                        this.savedData = this.ctx.getImageData(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
+                        this.ctx.beginPath(); this.ctx.moveTo(x, y);
+                    },
+                    move: function(x, y) {
+                        if (!this.isDrawing) return;
+                        this.ctx.putImageData(this.savedData, 0, 0);
+                        this.ctx.strokeStyle = this.color; this.ctx.lineWidth = this.size;
+                        if (this.tool === 'pencil') {
+                            this.ctx.lineTo(x, y); this.ctx.stroke();
+                        } else if (this.tool === 'line') {
+                            this.ctx.beginPath(); this.ctx.moveTo(this.startX, this.startY); this.ctx.lineTo(x, y); this.ctx.stroke();
+                        } else if (this.tool === 'rect') {
+                            this.ctx.strokeRect(this.startX, this.startY, x - this.startX, y - this.startY);
+                        } else if (this.tool === 'circle') {
+                            let r = Math.max(Math.abs(x - this.startX), Math.abs(y - this.startY));
+                            this.ctx.beginPath(); this.ctx.arc(this.startX, this.startY, r, 0, 2 * Math.PI); this.ctx.stroke();
+                        }
+                    },
+                    end: function() { this.isDrawing = false; this.savedData = null; },
+                    clear: function() { this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height); },
+                    sync: function(t, c, s) { this.tool = t; this.color = c; this.size = s; }
+                };
+            ");
+            await JS.InvokeVoidAsync("__DrawApp.init", "drawCanvas");
+            await SyncSettings();
+        }
+    }
+
+    private async Task SyncSettings() => await JS.InvokeVoidAsync("__DrawApp.sync", _tool, _color, _size);
+
+    private async Task OnMouseDown(MouseEventArgs e) => await JS.InvokeVoidAsync("__DrawApp.start", e.OffsetX, e.OffsetY);
+    private async Task OnMouseMove(MouseEventArgs e) => await JS.InvokeVoidAsync("__DrawApp.move", e.OffsetX, e.OffsetY);
+    private async Task OnMouseUp(MouseEventArgs e) => await JS.InvokeVoidAsync("__DrawApp.end");
+    private async Task OnMouseLeave() => await JS.InvokeVoidAsync("__DrawApp.end");
+
+    private async Task SetTool(string t) { _tool = t; await SyncSettings(); }
+    private async Task SetColor(string c) { _color = c; await SyncSettings(); }
+    
+    // Безопасная обработка ввода размера (ChangeEventArgs.Value имеет тип object?)
+    private void OnSizeInput(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out int newSize))
+        {
+            _size = newSize;
+            StateHasChanged();
+            _ = SyncSettings(); // Fire & forget для плавности слайдера
+        }
+    }
+
+    private async Task Clear() => await JS.InvokeVoidAsync("__DrawApp.clear");
+    private async Task HandleClose() => await OnClose.InvokeAsync();
+}

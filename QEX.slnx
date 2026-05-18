@@ -1,4 +1,5 @@
 <Solution>
+  <Project Path="ArtFlow/ArtFlow.csproj" Id="40149a02-8616-4fcf-b053-7dcd082df035" />
   <Project Path="Extension/Writer/Writer.csproj" Id="0477c6ab-35cf-476a-a7ec-bd222fe67989" />
   <Project Path="QEX/QEX.csproj">
     <Deploy />

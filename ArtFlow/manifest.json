@@ -1,0 +1,8 @@
+{
+  "Id": "qex.artflow",
+  "Name": "QEX ArtFlow",
+  "Description": "Test painting extension",
+  "Version": "1.0.0",
+  "AssemblyFile": "ArtFlow.dll",
+  "RootComponent": "ArtFlow.Pages.Home"
+}
