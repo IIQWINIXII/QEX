@@ -1,86 +1,361 @@
-﻿@using Writer.Classes
-@using Writer.Interface
-<div class="notebook">
-    <div class="toolbar">
-        <button @onclick="New">New</button>
-        <button @onclick="Open">Open</button>
-        <button @onclick="Save">Save</button>
-        <button @onclick="SaveAs">Save As</button>
-        <input @bind="SearchQuery" placeholder="Search" />
-        <button @onclick="Find">Find</button>
-        <button @onclick="Close">Close</button>
+﻿@page "/writer"
+@using System.Text
+@using Microsoft.JSInterop
+@inject IJSRuntime JSRuntime
+
+<!--
+  WriterHome.razor
+  Полностью автономный компонент: стили, JS, модели и логика в одном файле.
+  Поддерживает: New, Open (через input file), Save (скачивание), Save As (prompt), Find, Close.
+-->
+
+<style>
+/* Стили формы */
+.notebook {
+  max-width: 980px;
+  margin: 28px auto;
+  border: 1px solid #e6e6e6;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+  background: linear-gradient(180deg, #ffffff 0%, #fbfbfd 100%);
+  font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: #111827;
+  overflow: hidden;
+}
+
+.toolbar {
+  display: flex;
+  gap: 8px;
+  padding: 12px;
+  border-bottom: 1px solid #f0f0f3;
+  align-items: center;
+  background: linear-gradient(180deg,#fafafa,#f7f8fb);
+}
+
+.toolbar .left {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.toolbar .right {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.toolbar button {
+  background: #0b5ed7;
+  color: #fff;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+  transition: background .12s ease, transform .06s ease;
+  box-shadow: 0 1px 0 rgba(0,0,0,0.04);
+}
+
+.toolbar button.secondary {
+  background: #6b7280;
+}
+
+.toolbar button:active { transform: translateY(1px); }
+.toolbar button:hover { filter: brightness(.95); }
+
+.toolbar input[type="text"] {
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  width: 260px;
+  font-size: 13px;
+  background: #fff;
+}
+
+.editor {
+  width: 100%;
+  min-height: 420px;
+  padding: 18px;
+  box-sizing: border-box;
+  border: none;
+  resize: vertical;
+  font-family: "Consolas", "Courier New", monospace;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #0f172a;
+  background: transparent;
+  outline: none;
+  white-space: pre-wrap;
+}
+
+.footer {
+  padding: 10px 12px;
+  border-top: 1px solid #f0f0f3;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.small-btn {
+  background: transparent;
+  border: 1px solid #e5e7eb;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #374151;
+}
+
+/* подсветка найденного текста (используется JS для выделения) */
+.highlight {
+  background: #fff59d;
+  color: #111;
+}
+</style>
+
+<!-- Встроенный JS: реализует pickFile (input), saveFile (скачивание), promptFileName -->
+<script>
+  window._writerInterop = {
+    pickFile: function () {
+      return new Promise((resolve) => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '*/*';
+        input.onchange = async (e) => {
+          const file = e.target.files[0];
+          if (!file) { resolve(null); return; }
+          const arrayBuffer = await file.arrayBuffer();
+          const bytes = Array.from(new Uint8Array(arrayBuffer));
+          resolve({ fileName: file.name, content: bytes, contentType: file.type });
+        };
+        input.click();
+      });
+    },
+
+    saveFile: function (fileName, bytes) {
+      try {
+        const blob = new Blob([new Uint8Array(bytes)], { type: 'application/octet-stream' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName || 'untitled.txt';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        return true;
+      } catch (e) {
+        console.error(e);
+        return false;
+      }
+    },
+
+    promptFileName: function (defaultName) {
+      return prompt("Save as", defaultName || "untitled.txt");
+    },
+
+    // helper: highlight first occurrence in a textarea by selecting range
+    highlightInTextarea: function (textareaId, start, length) {
+      const ta = document.getElementById(textareaId);
+      if (!ta) return;
+      ta.focus();
+      if (typeof ta.setSelectionRange === 'function') {
+        ta.setSelectionRange(start, start + length);
+      } else if (document.createRange) {
+        // fallback: do nothing
+      }
+    }
+  };
+</script>
+
+<div class="notebook" role="region" aria-label="Writer editor">
+  <div class="toolbar" role="toolbar">
+    <div class="left">
+      <button @onclick="New">New</button>
+      <button @onclick="Open">Open</button>
+      <button @onclick="Save">Save</button>
+      <button class="secondary" @onclick="SaveAs">Save As</button>
     </div>
 
-    <textarea class="editor" @bind="TextContent" rows="20"></textarea>
+    <div class="right">
+      <input type="text" @bind="SearchQuery" placeholder="Search in document" />
+      <button class="small-btn" @onclick="Find">Find</button>
+      <button class="small-btn" @onclick="Close">Close</button>
+    </div>
+  </div>
+
+  <!-- textarea имеет id для JS выделения -->
+  <textarea id="@_textareaId" class="editor" @bind="TextContent" rows="18" aria-label="Document editor"></textarea>
+
+  <div class="footer">
+    <div>File: <strong>@(CurrentDoc?.FileName ?? "untitled.txt")</strong></div>
+    <div>@(TextContent?.Length ?? 0) chars</div>
+  </div>
 </div>
 
 @code {
-    [Parameter] public EventCallback OnClose { get; set; }
-    [Inject] public IEditorService EditorService { get; set; }
-    [Inject] public IExtensionHost Host { get; set; } // если доступен
+  [Parameter] public EventCallback OnClose { get; set; }
+  // --- Простые модели и обработчик внутри компонента (всё в одном файле) ---
+  private class DocumentInfo
+  {
+    public string FileName { get; set; } = "untitled.txt";
+    public string? Text { get; set; }
+    public byte[]? Content { get; set; }
+  }
 
-    private string TextContent { get; set; } = string.Empty;
-    private DocumentInfo CurrentDoc { get; set; }
-    private string SearchQuery { get; set; }
+  private interface IDocumentHandler
+  {
+    string[] SupportedExtensions { get; }
+    Task<DocumentInfo> LoadAsync(Stream stream, string fileName);
+    Task SaveAsync(DocumentInfo doc, Stream stream);
+  }
 
-    protected override async Task OnInitializedAsync()
+  private class PlainTextHandler : IDocumentHandler
+  {
+    public string[] SupportedExtensions => new[] { ".txt" };
+
+    public async Task<DocumentInfo> LoadAsync(Stream stream, string fileName)
     {
-        // регистрация обработчиков внутри сервиса делается при создании сервиса
+      using var sr = new StreamReader(stream, Encoding.UTF8, true, 1024, leaveOpen: true);
+      var text = await sr.ReadToEndAsync();
+      return new DocumentInfo { FileName = fileName, Text = text, Content = Encoding.UTF8.GetBytes(text) };
     }
 
-    private async Task New()
+    public async Task SaveAsync(DocumentInfo doc, Stream stream)
     {
-        CurrentDoc = null;
-        TextContent = string.Empty;
+      using var sw = new StreamWriter(stream, Encoding.UTF8, 1024, leaveOpen: true);
+      await sw.WriteAsync(doc.Text ?? string.Empty);
+      await sw.FlushAsync();
+    }
+  }
+
+  private class EditorService
+  {
+    private readonly IDocumentHandler[] _handlers;
+    public EditorService(params IDocumentHandler[] handlers) => _handlers = handlers ?? Array.Empty<IDocumentHandler>();
+    public IDocumentHandler GetHandler(string fileName)
+    {
+      var ext = Path.GetExtension(fileName ?? string.Empty).ToLowerInvariant();
+      var handler = _handlers.FirstOrDefault(h => h.SupportedExtensions.Contains(ext));
+      return handler ?? _handlers.FirstOrDefault(h => h.SupportedExtensions.Contains(".txt"))!;
+    }
+  }
+
+  // --- Поля компонента ---
+  private DocumentInfo CurrentDoc { get; set; } = new DocumentInfo();
+  private EditorService _editorService = new EditorService(new PlainTextHandler());
+  private string TextContent { get; set; } = string.Empty;
+  private string SearchQuery { get; set; } = string.Empty;
+  private readonly string _textareaId = "writer_textarea_" + Guid.NewGuid().ToString("N");
+
+  // --- Команды ---
+  private Task New()
+  {
+    CurrentDoc = new DocumentInfo();
+    TextContent = string.Empty;
+    return Task.CompletedTask;
+  }
+
+  private async Task Open()
+  {
+    try
+    {
+      var pick = await JSRuntime.InvokeAsync<PickResult?>("_writerInterop.pickFile");
+      if (pick == null) return;
+
+      var bytes = pick.content ?? Array.Empty<byte>();
+      using var ms = new MemoryStream(bytes);
+      var handler = _editorService.GetHandler(pick.fileName ?? "untitled.txt");
+      CurrentDoc = await handler.LoadAsync(ms, pick.fileName ?? "untitled.txt");
+      TextContent = CurrentDoc.Text ?? string.Empty;
+      StateHasChanged();
+    }
+    catch (JSException jsEx)
+    {
+      Console.WriteLine("Open JS error: " + jsEx.Message);
+    }
+  }
+
+  private async Task Save()
+  {
+    CurrentDoc.Text = TextContent;
+    if (string.IsNullOrEmpty(CurrentDoc.FileName))
+    {
+      await SaveAs();
+      return;
     }
 
-    private async Task Open()
-    {
-        // В Blazor WebView/MAUI: использовать IFilePicker через JS interop или хост‑API
-        var file = await Host.RequestActionAsync("PickFile", new { Filter = "All files|*.*" });
-        if (file is FilePickResult pick)
-        {
-            using var stream = pick.OpenReadStream();
-            var handler = EditorService.GetHandler(pick.FileName);
-            CurrentDoc = await handler.LoadAsync(stream, pick.FileName);
-            TextContent = CurrentDoc.Text ?? string.Empty;
-        }
-    }
+    using var ms = new MemoryStream();
+    var handler = _editorService.GetHandler(CurrentDoc.FileName);
+    await handler.SaveAsync(CurrentDoc, ms);
+    var bytes = ms.ToArray();
 
-    private async Task Save()
+    try
     {
-        if (CurrentDoc == null)
-        {
-            await SaveAs();
-            return;
-        }
-        CurrentDoc.Text = TextContent;
-        using var ms = new MemoryStream();
-        var handler = EditorService.GetHandler(CurrentDoc.FileName ?? "untitled.txt");
-        await handler.SaveAsync(CurrentDoc, ms);
-        ms.Position = 0;
-        await Host.RequestActionAsync("SaveFile", new { FileName = CurrentDoc.FileName, Stream = ms }); // хост сохраняет
+      await JSRuntime.InvokeVoidAsync("_writerInterop.saveFile", CurrentDoc.FileName, bytes);
     }
+    catch (JSException jsEx)
+    {
+      Console.WriteLine("Save JS error: " + jsEx.Message);
+    }
+  }
 
-    private async Task SaveAs()
+  private async Task SaveAs()
+  {
+    try
     {
-        var fileName = await Host.RequestActionAsync("PickSavePath", new { DefaultName = CurrentDoc?.FileName ?? "untitled.txt" });
-        // аналогично: получить stream и вызвать handler.SaveAsync
+      var defaultName = CurrentDoc?.FileName ?? "untitled.txt";
+      var fileName = await JSRuntime.InvokeAsync<string?>("_writerInterop.promptFileName", defaultName);
+      if (string.IsNullOrEmpty(fileName)) return;
+      CurrentDoc.FileName = fileName;
+      await Save();
     }
+    catch (JSException jsEx)
+    {
+      Console.WriteLine("SaveAs JS error: " + jsEx.Message);
+    }
+  }
 
-    private void Find()
+  private async Task Find()
+  {
+    if (string.IsNullOrEmpty(SearchQuery)) return;
+    var idx = TextContent?.IndexOf(SearchQuery, StringComparison.OrdinalIgnoreCase) ?? -1;
+    if (idx >= 0)
     {
-        // простая реализация поиска
-        if (string.IsNullOrEmpty(SearchQuery)) return;
-        var idx = TextContent?.IndexOf(SearchQuery, StringComparison.OrdinalIgnoreCase) ?? -1;
-        if (idx >= 0)
-        {
-            // можно выделить текст через JS interop или прокрутить
-        }
+      // выделяем найденный диапазон в textarea через JS
+      try
+      {
+        await JSRuntime.InvokeVoidAsync("_writerInterop.highlightInTextarea", _textareaId, idx, SearchQuery.Length);
+      }
+      catch
+      {
+        // ignore
+      }
     }
+    else
+    {
+      // ничего не найдено — можно показать уведомление в консоли
+      Console.WriteLine("Not found");
+    }
+  }
 
-    private async Task Close()
-    {
-        if (OnClose.HasDelegate) await OnClose.InvokeAsync(null);
-    }
+  private Task Close()
+  {
+    // Если хост ожидает событие — можно вызвать OnClose, но здесь просто очищаем
+    CurrentDoc = new DocumentInfo();
+    TextContent = string.Empty;
+    SearchQuery = string.Empty;
+    return Task.CompletedTask;
+  }
+
+  // --- Вспомогательный тип для десериализации результата pickFile ---
+  private class PickResult
+  {
+    public string? fileName { get; set; }
+    public byte[]? content { get; set; }
+    public string? contentType { get; set; }
+  }
 }
