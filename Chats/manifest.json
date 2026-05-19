@@ -1,0 +1,8 @@
+{
+  "Id": "qex.chats",
+  "Name": "QEX Chats",
+  "Description": "Test chat extension",
+  "Version": "1.0.0",
+  "AssemblyFile": "Chats.dll",
+  "RootComponent": "Chats.Pages.Home"
+}
