@@ -8,6 +8,10 @@ namespace QEX.Resources.Data.Classes
     {
         //Theme add style select
         public const string _InterfaceSetting = "InterfaceSetting";
+        public const string _InterfaceSetting = "InterfaceSetting";
+        public const string _Localization = "Localization";
+        public const string _IsShowExtensionSysTray = "IsShowExtensionSysTray";
+        public const string _IsUseHotKey = "IsUseHotKey";
 
         public string Localization = "EN/en";
         public bool IsShowExtensionSysTray = false;
