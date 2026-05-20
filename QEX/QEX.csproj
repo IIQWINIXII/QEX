@@ -41,14 +41,11 @@
 
     <ItemGroup>
         <!-- App Icon -->
-        <MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="#512BD4" />
 
         <!-- Splash Screen -->
-        <MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#512BD4" BaseSize="128,128" />
 
         <!-- Images -->
         <MauiImage Include="Resources\Images\*" />
-        <MauiImage Update="Resources\Images\dotnet_bot.svg" BaseSize="168,208" />
 
         <!-- Custom Fonts -->
         <MauiFont Include="Resources\Fonts\*" />
@@ -83,6 +80,7 @@
         <PackageReference Include="Microsoft.Maui.Controls" Version="10.0.50" />
         <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="10.0.50" />
         <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.5" />
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     </ItemGroup>
 
     <ItemGroup>
@@ -104,6 +102,10 @@
 
     <ItemGroup>
       <Folder Include="Components\Extensions\Installed\" />
+      <Folder Include="Resources\AppIcon\" />
+      <Folder Include="Resources\Images\" />
+      <Folder Include="Resources\Raw\" />
+      <Folder Include="Resources\Splash\" />
     </ItemGroup>
 
 </Project>

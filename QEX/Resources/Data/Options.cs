@@ -14,7 +14,11 @@ namespace QEX.Resources.Data
 
         public void LoadSetting() // дописать загрузку
         {
+            extensionSetting = new ExtensionSetting();
+            interfaceSetting = new InterfaceSetting();
+            securitySetting = new SecuritySetting();
 
+            extensionSetting.LoadSetting(DataFilePath.OptionPath);
         }
         public void SaveSetting()
         {
