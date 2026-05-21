@@ -14,7 +14,7 @@ namespace QEX.Components.Extensions.Classes
         // Пока путь задаём строкой
         private readonly string _extensionsRoot =
             //@"C:\QEX\QEX\Extension\Writer\bin\Debug";
-            @"D:\QEX\QEX\ArtFlow\bin\Debug";
+            @"C:\QEX\QEX\ArtFlow\bin\Debug";
 
         private readonly List<string> extensionaRoots = [];
         public ExtensionLoader(IExtensionService extensionService)

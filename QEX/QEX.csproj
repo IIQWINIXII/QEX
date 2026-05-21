@@ -108,4 +108,10 @@
       <Folder Include="Resources\Splash\" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Content Update="Resources\Data\Options.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+    </ItemGroup>
+
 </Project>

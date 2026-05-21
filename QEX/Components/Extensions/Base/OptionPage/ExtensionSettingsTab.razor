@@ -1,0 +1,20 @@
+﻿@using QEX.Resources.Data.Classes
+<div class="settings-section">
+    <h3>Настройки расширений</h3>
+    <div class="setting-item">
+        <label class="setting-label">Путь к папке расширений</label>        
+    </div>
+    <div class="setting-item">
+        <label class="setting-label">
+            <input type="checkbox" @bind="Settings!.IsAutoUpdate" />
+            Автоматически обновлять расширения
+        </label>
+    </div>
+</div>
+
+@code {
+    [Parameter] public ExtensionSetting? Settings { get; set; }
+    [Parameter] public EventCallback OnSettingsChanged { get; set; }
+
+
+}

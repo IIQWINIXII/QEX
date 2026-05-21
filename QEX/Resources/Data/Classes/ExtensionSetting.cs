@@ -70,7 +70,7 @@ namespace QEX.Resources.Data.Classes
 
         }
         /// <summary>
-        /// Сохраняет настройи расширений в файл Data/Options
+        /// Сохраняет настройки расширений в файл Data/Options
         /// </summary>
         /// <param name="FilePath">Путь к файлу вместе с именем файла</param>
         public void SaveSetting(string FilePath)

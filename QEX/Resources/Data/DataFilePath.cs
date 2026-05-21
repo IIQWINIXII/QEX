@@ -7,7 +7,7 @@ namespace QEX.Resources.Data
 {
     public static class DataFilePath
     {
-        public static string OptionPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "Data");
+        public static string OptionPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "Data", "Options");
         // TODO: Добавить сохранение для дополнительнызх файлов из расширений.
     }
 }

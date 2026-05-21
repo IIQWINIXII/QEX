@@ -1,7 +1,625 @@
-﻿<div>
-    Настройки
-</div>
+﻿@using QEX.Resources.Data
+@using QEX.Components.Extensions.Base.OptionPage
+@inject IJSRuntime JSRuntime
 
+<div class="options-overlay" @onclick="HandleOverlayClick">
+    <div class="options-modal" @onclick:stopPropagation="true">
+        <div class="options-container">
+            <div class="options-header">
+                <h2>⚙️ Настройки приложения</h2>
+                <div class="header-actions">
+                    <span class="status-indicator @(hasChanges ? "has-changes" : "")">
+                        @if (hasChanges)
+                        {
+                            <span class="unsaved-badge">●</span>
+                        }
+                    </span>
+                    <button class="close-btn" @onclick='() => HandleClose("close-btn")' title="Закрыть">
+                        ✕
+                    </button>
+                </div>
+            </div>
+
+            <div class="options-tabs">
+                <button class="tab-btn @(activeTab == TabType.Interface ? "active" : "")"
+                        @onclick="() => SetActiveTab(TabType.Interface)">
+                    <span class="tab-icon">🎨</span>
+                    <span class="tab-label">Интерфейс</span>
+                </button>
+                <button class="tab-btn @(activeTab == TabType.Security ? "active" : "")"
+                        @onclick="() => SetActiveTab(TabType.Security)">
+                    <span class="tab-icon">🔒</span>
+                    <span class="tab-label">Безопасность</span>
+                </button>
+                <button class="tab-btn @(activeTab == TabType.Extensions ? "active" : "")"
+                        @onclick="() => SetActiveTab(TabType.Extensions)">
+                    <span class="tab-icon">🔌</span>
+                    <span class="tab-label">Расширения</span>
+                </button>
+            </div>
+
+            <div class="options-content">
+                @switch (activeTab)
+                {
+                    case TabType.Interface:
+                        <InterfaceSettingsTab Settings="options.interfaceSetting"
+                                              OnSettingsChanged="MarkAsChanged" />
+                        break;
+                    case TabType.Security:
+                        <SecuritySettingsTab Settings="options.securitySetting"
+                                             OnSettingsChanged="MarkAsChanged" />
+                        break;
+                    case TabType.Extensions:
+                        <ExtensionSettingsTab Settings="options.extensionSetting"
+                                              OnSettingsChanged="MarkAsChanged" />
+                        break;
+                }
+            </div>
+
+            <div class="options-footer">
+                <div class="footer-info">
+                    @if (lastSaveTime.HasValue)
+                    {
+                        <span class="save-info">Последнее сохранение: @lastSaveTime.Value.ToString("HH:mm:ss")</span>
+                    }
+                    @if (notificationMessage != null)
+                    {
+                        <span class="notification @notificationType">@notificationMessage</span>
+                    }
+                </div>
+                <div class="footer-actions">
+                    <button class="btn-secondary" @onclick="CancelChanges"
+                            disabled="@(!hasChanges)">
+                        <span class="btn-icon">↩</span> Отмена
+                    </button>
+                    <button class="btn-primary" @onclick="SaveSettings"
+                            disabled="@(!hasChanges)">
+                        <span class="btn-icon">💾</span> Сохранить
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        @if (isSaving)
+        {
+            <div class="saving-overlay">
+                <div class="spinner"></div>
+                <span>Сохранение...</span>
+            </div>
+        }
+    </div>
+</div>
+<style>
+    .options-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(4px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        animation: fadeIn 0.2s ease;
+    }
+
+    .options-modal {
+        background: #1e1e2e;
+        border: 1px solid #313244;
+        border-radius: 16px;
+        box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+        width: 800px;
+        max-width: 90vw;
+        max-height: 85vh;
+        overflow: hidden;
+        animation: slideUp 0.3s ease;
+    }
+
+    .options-container {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+
+    /* Заголовок */
+    .options-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 20px 24px;
+        border-bottom: 1px solid #313244;
+        background: #181825;
+    }
+
+        .options-header h2 {
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #cdd6f4;
+            letter-spacing: -0.02em;
+        }
+
+    .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .status-indicator {
+        display: flex;
+        align-items: center;
+    }
+
+    .unsaved-badge {
+        color: #f9e2af;
+        font-size: 1.2rem;
+        animation: pulse 2s infinite;
+    }
+
+    /* Кнопка закрытия */
+    .close-btn {
+        background: none;
+        border: none;
+        color: #6c7086;
+        font-size: 1.3rem;
+        cursor: pointer;
+        padding: 6px 10px;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+        line-height: 1;
+    }
+
+        .close-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #cdd6f4;
+            transform: rotate(90deg);
+        }
+
+        .close-btn:active {
+            transform: rotate(90deg) scale(0.95);
+        }
+
+    /* Табы */
+    .options-tabs {
+        display: flex;
+        gap: 4px;
+        padding: 12px 24px;
+        background: #181825;
+        border-bottom: 1px solid #313244;
+    }
+
+    .tab-btn {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 18px;
+        background: transparent;
+        border: none;
+        border-radius: 10px;
+        color: #6c7086;
+        font-size: 0.9rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        position: relative;
+    }
+
+        .tab-btn:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: #a6adc8;
+        }
+
+        .tab-btn.active {
+            background: #313244;
+            color: #cdd6f4;
+        }
+
+            .tab-btn.active::after {
+                content: '';
+                position: absolute;
+                bottom: -12px;
+                left: 50%;
+                transform: translateX(-50%);
+                width: 30px;
+                height: 2px;
+                background: #89b4fa;
+                border-radius: 1px;
+            }
+
+    .tab-icon {
+        font-size: 1.1rem;
+    }
+
+    .tab-label {
+        font-size: 0.85rem;
+    }
+
+    /* Контент */
+    .options-content {
+        flex: 1;
+        overflow-y: auto;
+        padding: 24px;
+        background: #1e1e2e;
+        min-height: 300px;
+        max-height: 50vh;
+    }
+
+        /* Стилизация скроллбара */
+        .options-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .options-content::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .options-content::-webkit-scrollbar-thumb {
+            background: #45475a;
+            border-radius: 4px;
+        }
+
+            .options-content::-webkit-scrollbar-thumb:hover {
+                background: #585b70;
+            }
+
+    /* Футер */
+    .options-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 24px;
+        border-top: 1px solid #313244;
+        background: #181825;
+    }
+
+    .footer-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex: 1;
+    }
+
+    .save-info {
+        color: #6c7086;
+        font-size: 0.8rem;
+    }
+
+    .notification {
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        animation: slideIn 0.3s ease;
+    }
+
+        .notification.success {
+            background: rgba(166, 227, 161, 0.15);
+            color: #a6e3a1;
+            border: 1px solid rgba(166, 227, 161, 0.3);
+        }
+
+        .notification.error {
+            background: rgba(243, 139, 168, 0.15);
+            color: #f38ba8;
+            border: 1px solid rgba(243, 139, 168, 0.3);
+        }
+
+        .notification.info {
+            background: rgba(137, 180, 250, 0.15);
+            color: #89b4fa;
+            border: 1px solid rgba(137, 180, 250, 0.3);
+        }
+
+    .footer-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    /* Кнопки */
+    .btn-secondary,
+    .btn-primary {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 10px 20px;
+        border-radius: 10px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: none;
+    }
+
+    .btn-secondary {
+        background: #313244;
+        color: #cdd6f4;
+        border: 1px solid #45475a;
+    }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #45475a;
+            border-color: #585b70;
+        }
+
+    .btn-primary {
+        background: #89b4fa;
+        color: #1e1e2e;
+        font-weight: 600;
+    }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #74c7ec;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(137, 180, 250, 0.3);
+        }
+
+        .btn-primary:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .btn-secondary:disabled,
+        .btn-primary:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+    .btn-icon {
+        font-size: 1rem;
+    }
+
+    /* Оверлей сохранения */
+    .saving-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(30, 30, 46, 0.9);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        color: #cdd6f4;
+        font-size: 1rem;
+        z-index: 10;
+        border-radius: 16px;
+    }
+
+    .spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid #313244;
+        border-top-color: #89b4fa;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+    }
+    
+    .options-header {
+        padding: 16px 20px;
+    }
+    
+    .options-tabs {
+        padding: 8px 16px;
+        overflow-x: auto;
+    }
+    
+    .tab-btn {
+        padding: 8px 14px;
+        white-space: nowrap;
+    }
+    
+    .options-content {
+        padding: 16px;
+        max-height: 60vh;
+    }
+    
+    .options-footer {
+        flex-direction: column;
+        gap: 12px;
+        padding: 12px 16px;
+    }
+    
+    .footer-actions {
+        width: 100%;
+    }
+    
+    .btn-secondary,
+    .btn-primary {
+        flex: 1;
+        justify-content: center;
+    }
+    
+    .tab-label {
+        display: none;
+    }
+    
+    .tab-btn {
+        padding: 10px;
+    }
+</style>
 @code {
     [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback OnSettingsSaved { get; set; }
+
+    private enum TabType { Interface, Security, Extensions }
+    private TabType activeTab = TabType.Interface;
+    private Options options = new();
+    private bool hasChanges = false;
+    private bool isSaving = false;
+    private DateTime? lastSaveTime;
+    private string? notificationMessage;
+    private string notificationType = "success";
+
+    protected override void OnInitialized()
+    {
+        try
+        {
+            options.LoadSetting();
+            Console.WriteLine("Settings loaded successfully");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading settings: {ex.Message}");
+            ShowNotification("Ошибка загрузки настроек", "error");
+        }
+    }
+
+    private void MarkAsChanged()
+    {
+        hasChanges = true;
+        StateHasChanged();
+    }
+
+    private void SetActiveTab(TabType tab)
+    {
+        activeTab = tab;
+        StateHasChanged();
+    }
+
+    private async Task SaveSettings()
+    {
+        if (isSaving) return;
+
+        try
+        {
+            isSaving = true;
+            StateHasChanged();
+
+            await Task.Delay(300); // Имитация задержки сохранения
+
+            options.SaveSetting();
+            hasChanges = false;
+            lastSaveTime = DateTime.Now;
+            
+            ShowNotification("✅ Настройки успешно сохранены", "success");
+            await OnSettingsSaved.InvokeAsync();
+            
+            // Автоматически скрываем уведомление через 3 секунды
+            _ = Task.Run(async () =>
+            {
+                await Task.Delay(3000);
+                await InvokeAsync(() =>
+                {
+                    notificationMessage = null;
+                    StateHasChanged();
+                });
+            });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error saving settings: {ex.Message}");
+            ShowNotification("❌ Ошибка сохранения настроек", "error");
+        }
+        finally
+        {
+            isSaving = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task CancelChanges()
+    {
+        if (hasChanges)
+        {
+            bool? result = null;
+            try
+            {
+                result = await JSRuntime.InvokeAsync<bool>("confirm",
+                    "У вас есть несохранённые изменения. Отменить их?");
+            }
+            catch
+            {
+                // Fallback - используем хак с confirm через DOM
+                result = await FallbackConfirm();
+            }
+
+            if (result == true)
+            {
+                options.LoadSetting();
+                hasChanges = false;
+                ShowNotification("Изменения отменены", "info");
+                StateHasChanged();
+            }
+        }
+        else
+        {
+            await SafeClose();
+        }
+    }
+
+    private async Task HandleClose(string source)
+    {
+        if (source == "overlay") return; // Игнорируем клик по overlay
+        
+        if (hasChanges)
+        {
+            bool? result = null;
+            try
+            {
+                result = await JSRuntime.InvokeAsync<bool>("confirm",
+                    "У вас есть несохранённые изменения. Сохранить перед закрытием?");
+            }
+            catch
+            {
+                result = await FallbackConfirm();
+            }
+
+            if (result == true)
+            {
+                await SaveSettings();
+                await SafeClose();
+            }
+            else if (result == false)
+            {
+                options.LoadSetting();
+                await SafeClose();
+            }
+            // Если result == null - пользователь отменил
+        }
+        else
+        {
+            await SafeClose();
+        }
+    }
+
+    private async Task HandleOverlayClick()
+    {
+        await HandleClose("overlay");
+    }
+
+    private async Task SafeClose()
+    {
+        try
+        {
+            await OnClose.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error during close: {ex.Message}");
+        }
+    }
+
+    private async Task<bool?> FallbackConfirm()
+    {
+        // Создаём fallback confirm через JavaScript
+        try
+        {
+            return await JSRuntime.InvokeAsync<bool>("confirm",
+                "У вас есть несохранённые изменения. Продолжить?");
+        }
+        catch
+        {
+            return true; // По умолчанию продолжаем если JS недоступен
+        }
+    }
+
+    private void ShowNotification(string message, string type)
+    {
+        notificationMessage = message;
+        notificationType = type;
+        StateHasChanged();
+    }
 }

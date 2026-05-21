@@ -1,0 +1,33 @@
+﻿@using QEX.Resources.Data;
+@using QEX.Resources.Data.Classes
+
+<div class="settings-section">
+    <h3>Настройки интерфейса</h3>
+    
+    <div class="setting-item">
+        <label class="setting-label">Тема оформления</label>
+        <select @bind="Settings?.Theme" 
+                @bind:event="oninput" 
+                @onchange="() => OnSettingsChanged.InvokeAsync()">
+            <option value="Light">Светлая</option>
+            <option value="Dark">Тёмная</option>
+            <option value="System">Системная</option>
+        </select>
+    </div>
+
+    <div class="setting-item">
+        <label class="setting-label">Язык интерфейса</label>
+        <select @bind="Settings!.Localization" 
+                @bind:event="oninput" 
+                @onchange="() => OnSettingsChanged.InvokeAsync()">
+            <option value="ru-RU">Русский</option>
+            <option value="en-US">English</option>
+        </select>
+    </div>
+
+</div>
+
+@code {
+    [Parameter] public InterfaceSetting? Settings { get; set; }
+    [Parameter] public EventCallback OnSettingsChanged { get; set; }
+}

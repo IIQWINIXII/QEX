@@ -1,0 +1,12 @@
+﻿@using QEX.Resources.Data;
+@using QEX.Resources.Data.Classes
+
+<div class="settings-section">
+    <h3>Настройки безопасности</h3>
+    
+</div>
+
+@code {
+    [Parameter] public SecuritySetting? Settings { get; set; }
+    [Parameter] public EventCallback OnSettingsChanged { get; set; }
+}

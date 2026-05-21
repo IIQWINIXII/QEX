@@ -7,22 +7,22 @@ namespace QEX.Resources.Data
 {
     public class Options
     {
-        private const string SettingFilePath = "";
-        public ExtensionSetting? extensionSetting;
-        public InterfaceSetting? interfaceSetting;
-        public SecuritySetting? securitySetting;
+        private string SettingFilePath = DataFilePath.OptionPath;
+        public ExtensionSetting? extensionSetting = new();
+        public InterfaceSetting? interfaceSetting = new();
+        public SecuritySetting? securitySetting = new();
 
-        public void LoadSetting() // дописать загрузку
+        public void LoadSetting()
         {
-            extensionSetting = new ExtensionSetting();
-            interfaceSetting = new InterfaceSetting();
-            securitySetting = new SecuritySetting();
-
-            extensionSetting.LoadSetting(DataFilePath.OptionPath);
+            extensionSetting?.LoadSetting(SettingFilePath);
+            interfaceSetting?.LoadSetting(SettingFilePath);
+            securitySetting?.LoadSetting(SettingFilePath);
         }
         public void SaveSetting()
         {
-
+            extensionSetting?.SaveSetting(SettingFilePath);
+            interfaceSetting?.SaveSetting(SettingFilePath);
+            securitySetting?.SaveSetting(SettingFilePath);
         }
     }
 }
