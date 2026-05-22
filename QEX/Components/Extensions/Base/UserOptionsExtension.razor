@@ -491,8 +491,6 @@
             isSaving = true;
             StateHasChanged();
 
-            await Task.Delay(300); // Имитация задержки сохранения
-
             options.SaveSetting();
             hasChanges = false;
             lastSaveTime = DateTime.Now;

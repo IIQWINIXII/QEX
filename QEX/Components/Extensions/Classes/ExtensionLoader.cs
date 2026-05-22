@@ -1,27 +1,27 @@
 ﻿using QEX.Abstractions.Interface;
-using System;
-using System.Collections.Generic;
 using System.Runtime.Loader;
-using System.Text;
 using System.Text.Json;
+using QEX.Resources.Data;
 
 namespace QEX.Components.Extensions.Classes
 {
     public class ExtensionLoader
     {
         private readonly IExtensionService _extensionService;
+        private Options _options = new();
 
-        // Пока путь задаём строкой
+        // Пока путь задаём строкой (пока что потом переписать на получение путей из настроек)
         private readonly string _extensionsRoot =
             //@"C:\QEX\QEX\Extension\Writer\bin\Debug";
             @"C:\QEX\QEX\ArtFlow\bin\Debug";
 
-        private readonly List<string> extensionaRoots = [];
+        private readonly List<string>? extensionaRoots = [];
         public ExtensionLoader(IExtensionService extensionService)
         {
             _extensionService = extensionService;
-            extensionaRoots = [];
-        }
+            _options.LoadSetting();                                                  
+            extensionaRoots = _options?.extensionSetting?.ExtensionPath ?? []; // переписать структуру полчения 
+        }                                                               // примерно черз чтение каждого пути
 
         public List<ExtensionInfo> LoadInstalled()
         {
