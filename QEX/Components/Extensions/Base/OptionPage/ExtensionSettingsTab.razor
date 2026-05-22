@@ -1,20 +1,275 @@
-﻿@using QEX.Resources.Data.Classes
+﻿@using CommunityToolkit.Maui.Storage
+@using QEX.Resources.Data.Classes
 <div class="settings-section">
-    <h3>Настройки расширений</h3>
+
+    <h3 class="section-title">
+        Настройки расширений
+    </h3>
+
+    <!-- PATH -->
     <div class="setting-item">
-        <label class="setting-label">Путь к папке расширений</label>        
+
+        <div class="setting-info">
+            <div class="setting-title">
+                Путь к папке расширений
+            </div>
+
+            <div class="setting-description">
+                Укажите директорию для загрузки расширений
+            </div>
+        </div>
+
+        <div class="setting-actions">
+
+            <input class="setting-input"
+                   type="text"
+                   placeholder="C:\QEX\Extensions"/>
+
+            <button class="browse-btn" @onclick="() => ExtensionDirChange(CancellationToken.None)">
+                Обзор
+            </button>
+
+        </div>
+
     </div>
+
     <div class="setting-item">
-        <label class="setting-label">
-            <input type="checkbox" @bind="Settings!.IsAutoUpdate" />
-            Автоматически обновлять расширения
+
+        <div class="setting-info">
+            <div class="setting-title">
+                Автоматическое обновление
+            </div>
+
+            <div class="setting-description">
+                Автоматически загружать новые версии расширений
+            </div>
+        </div>
+
+        <label class="switch">
+
+            <input type="checkbox"
+                   @bind="Settings!.IsAutoUpdate" />
+
+            <span class="slider"></span>
+
         </label>
+
     </div>
+
 </div>
 
+<style>
+
+.settings-section {
+    width: 100%;
+
+    background: #15171c;
+
+    border: 1px solid #2b2f38;
+
+    border-radius: 16px;
+
+    padding: 24px;
+
+    box-sizing: border-box;
+}
+
+.section-title {
+    margin: 0 0 28px 0;
+
+    font-size: 24px;
+    font-weight: 700;
+
+    color: #f2f3f5;
+}
+
+
+.setting-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 24px;
+
+    padding: 22px 0;
+
+    border-bottom: 1px solid rgba(255,255,255,.05);
+}
+
+.setting-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+.setting-info {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.setting-title {
+    font-size: 15px;
+    font-weight: 600;
+
+    color: #f2f3f5;
+}
+
+.setting-description {
+    font-size: 14px;
+
+    color: #8e9297;
+}
+
+.setting-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.setting-input {
+    width: 340px;
+
+    background: #1d2027;
+
+    border: 1px solid #2f3440;
+
+    border-radius: 12px;
+
+    padding: 12px 14px;
+
+    color: white;
+
+    outline: none;
+
+    transition: .2s ease;
+}
+
+.setting-input:focus {
+    border-color: #5865f2;
+
+    box-shadow: 0 0 0 4px rgba(88,101,242,.15);
+}
+
+.browse-btn {
+    border: none;
+
+    background: #5865f2;
+
+    color: white;
+
+    border-radius: 12px;
+
+    padding: 11px 18px;
+
+    font-size: 14px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition: .2s ease;
+}
+
+.browse-btn:hover {
+    background: #6d78f5;
+}
+
+.switch {
+    position: relative;
+
+    width: 52px;
+    height: 30px;
+
+    display: inline-block;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    inset: 0;
+
+    background: #30343d;
+
+    border-radius: 999px;
+
+    cursor: pointer;
+
+    transition: .2s ease;
+}
+
+.slider::before {
+    content: "";
+
+    position: absolute;
+
+    width: 22px;
+    height: 22px;
+
+    left: 4px;
+    top: 4px;
+
+    background: white;
+
+    border-radius: 50%;
+
+    transition: .2s ease;
+}
+
+.switch input:checked + .slider {
+    background: #5865f2;
+}
+
+.switch input:checked + .slider::before {
+    transform: translateX(22px);
+}
+
+
+</style>
+
 @code {
+
     [Parameter] public ExtensionSetting? Settings { get; set; }
+
     [Parameter] public EventCallback OnSettingsChanged { get; set; }
 
+    [Inject]
+    private IFolderPicker folderPicker { get; set; } = default!;
+    private async Task HandleChanged()
+    {
+        //await OnSettingsChanged.InvokeAsync();
+    }
+    private async Task ExtensionDirChange(CancellationToken cancellationToken)
+    {
+        try
+        {
+            // Проверяем, что folderPicker не null
+            if (folderPicker == null)
+            {
+                Console.WriteLine("folderPicker is null");
+                return;
+            }
+
+            var res = await folderPicker.PickAsync(cancellationToken);
+            res.EnsureSuccess();
+
+            if (res.IsSuccessful && res.Folder != null)
+            {
+                // Если ExtensionPath - это строка
+                if (Settings != null)
+                {
+                    Settings.ExtensionPath.Add(res.Folder.Path);
+                    await OnSettingsChanged.InvokeAsync();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error picking folder: {ex.Message}");
+        }
+    }
+    }
 
 }

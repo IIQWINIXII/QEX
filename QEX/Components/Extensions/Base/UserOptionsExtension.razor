@@ -19,43 +19,43 @@
                     </button>
                 </div>
             </div>
+            <div class="main-actions">
+                <div class="options-tabs">
+                    <button class="tab-btn @(activeTab == TabType.Interface ? "active" : "")"
+                            @onclick="() => SetActiveTab(TabType.Interface)">
+                        <span class="tab-icon">🎨</span>
+                        <span class="tab-label">Интерфейс</span>
+                    </button>
+                    <button class="tab-btn @(activeTab == TabType.Security ? "active" : "")"
+                            @onclick="() => SetActiveTab(TabType.Security)">
+                        <span class="tab-icon">🔒</span>
+                        <span class="tab-label">Безопасность</span>
+                    </button>
+                    <button class="tab-btn @(activeTab == TabType.Extensions ? "active" : "")"
+                            @onclick="() => SetActiveTab(TabType.Extensions)">
+                        <span class="tab-icon">🔌</span>
+                        <span class="tab-label">Расширения</span>
+                    </button>
+                </div>
 
-            <div class="options-tabs">
-                <button class="tab-btn @(activeTab == TabType.Interface ? "active" : "")"
-                        @onclick="() => SetActiveTab(TabType.Interface)">
-                    <span class="tab-icon">🎨</span>
-                    <span class="tab-label">Интерфейс</span>
-                </button>
-                <button class="tab-btn @(activeTab == TabType.Security ? "active" : "")"
-                        @onclick="() => SetActiveTab(TabType.Security)">
-                    <span class="tab-icon">🔒</span>
-                    <span class="tab-label">Безопасность</span>
-                </button>
-                <button class="tab-btn @(activeTab == TabType.Extensions ? "active" : "")"
-                        @onclick="() => SetActiveTab(TabType.Extensions)">
-                    <span class="tab-icon">🔌</span>
-                    <span class="tab-label">Расширения</span>
-                </button>
+                <div class="options-content">
+                    @switch (activeTab)
+                    {
+                        case TabType.Interface:
+                            <InterfaceSettingsTab Settings="options.interfaceSetting"
+                                                  OnSettingsChanged="MarkAsChanged" />
+                            break;
+                        case TabType.Security:
+                            <SecuritySettingsTab Settings="options.securitySetting"
+                                                 OnSettingsChanged="MarkAsChanged" />
+                            break;
+                        case TabType.Extensions:
+                            <ExtensionSettingsTab Settings="options.extensionSetting"
+                                                  OnSettingsChanged="MarkAsChanged" />
+                            break;
+                    }
+                </div>
             </div>
-
-            <div class="options-content">
-                @switch (activeTab)
-                {
-                    case TabType.Interface:
-                        <InterfaceSettingsTab Settings="options.interfaceSetting"
-                                              OnSettingsChanged="MarkAsChanged" />
-                        break;
-                    case TabType.Security:
-                        <SecuritySettingsTab Settings="options.securitySetting"
-                                             OnSettingsChanged="MarkAsChanged" />
-                        break;
-                    case TabType.Extensions:
-                        <ExtensionSettingsTab Settings="options.extensionSetting"
-                                              OnSettingsChanged="MarkAsChanged" />
-                        break;
-                }
-            </div>
-
             <div class="options-footer">
                 <div class="footer-info">
                     @if (lastSaveTime.HasValue)
@@ -90,6 +90,12 @@
     </div>
 </div>
 <style>
+    .main-actions{
+        display: flex;
+        flex-direction: column;
+        flex-direction: row; 
+        gap: 20px; 
+    }
     .options-overlay {
         position: fixed;
         top: 0;
@@ -183,7 +189,6 @@
 
     /* Табы */
     .options-tabs {
-        display: flex;
         gap: 4px;
         padding: 12px 24px;
         background: #181825;
@@ -238,8 +243,6 @@
 
     /* Контент */
     .options-content {
-        flex: 1;
-        overflow-y: auto;
         padding: 24px;
         background: #1e1e2e;
         min-height: 300px;

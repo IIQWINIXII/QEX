@@ -76,8 +76,9 @@
     </ItemGroup>
 
     <ItemGroup>
+        <PackageReference Include="CommunityToolkit.Maui" Version="14.1.1" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.5" />
-        <PackageReference Include="Microsoft.Maui.Controls" Version="10.0.50" />
+        <PackageReference Include="Microsoft.Maui.Controls" Version="10.0.60" />
         <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="10.0.50" />
         <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.5" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />

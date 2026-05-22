@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using CommunityToolkit.Maui;
+using CommunityToolkit.Maui.Storage;
+using Microsoft.Extensions.Logging;
 using QEX.Abstractions.Interface;
 using QEX.Abstractions.Service;
 
@@ -11,6 +13,7 @@ namespace QEX
             var builder = MauiApp.CreateBuilder();
             builder
                 .UseMauiApp<App>()
+                .UseMauiCommunityToolkit()
                 .ConfigureFonts(fonts =>
                 {
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
@@ -18,6 +21,7 @@ namespace QEX
 
             builder.Services.AddSingleton<IExtensionService, ExtensionService>();
             builder.Services.AddSingleton<UserService>();
+            builder.Services.AddSingleton<IFolderPicker>(FolderPicker.Default);
             builder.Services.AddMauiBlazorWebView();
 
 #if DEBUG
