@@ -27,9 +27,6 @@ namespace QEX.Resources.Data.Classes
         {
             try
             {
-                if (!Directory.Exists(FilePath)) 
-                    throw new DirectoryNotFoundException($"Файл настроек не найден: {FilePath}");
-
                 string json = File.ReadAllText(FilePath);
 
                 var settingDict = JsonConvert.DeserializeObject<Dictionary<string, object>>(json);

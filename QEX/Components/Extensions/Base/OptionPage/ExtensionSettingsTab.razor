@@ -1,268 +1,424 @@
 ﻿@using CommunityToolkit.Maui.Storage
 @using QEX.Resources.Data.Classes
-<div class="settings-section">
+@inject IJSRuntime JSRuntime
+@using QEX.Resources.Data;
 
+<div class="settings-section">
     <h3 class="section-title">
-        Настройки расширений
+        📁 Настройки расширений
     </h3>
 
-    <!-- PATH -->
-    <div class="setting-item">
-
-        <div class="setting-info">
-            <div class="setting-title">
-                Путь к папке расширений
-            </div>
-
+    <!-- Управление путями -->
+    <div class="setting-group">
+        <div class="setting-header">
+            <div class="setting-title">Пути к папкам расширений</div>
             <div class="setting-description">
-                Укажите директорию для загрузки расширений
+                Добавьте одну или несколько директорий для загрузки расширений
             </div>
         </div>
 
-        <div class="setting-actions">
+        <div class="paths-container">
+            <!-- Список путей -->
+            @if (Settings?.ExtensionPath != null && Settings.ExtensionPath.Any())
+            {
+                <div class="paths-list">
+                    @for (int i = 0; i < Settings.ExtensionPath.Count; i++)
+                    {
+                        var path = Settings.ExtensionPath[i];
+                        var index = i;
+                        
+                        <div class="path-item @(IsDragging ? "dragging" : "")"
+                             draggable="true"
+                             @ondragstart="() => OnDragStart(index)"
+                             @ondragover="OnDragOver"
+                             @ondrop="() => OnDrop(index)">
+                            
+                            <div class="path-info">
+                                <span class="path-icon">📂</span>
+                                <span class="path-text" title="@path">@TruncatePath(path)</span>
+                            </div>
+                            
+                            <div class="path-actions">
+                                <button class="icon-btn edit-btn" 
+                                        @onclick="() => EditPath(index)"
+                                        title="Редактировать">
+                                    ✏️
+                                </button>
+                                <button class="icon-btn remove-btn" 
+                                        @onclick="() => RemovePath(index)"
+                                        title="Удалить">
+                                    🗑️
+                                </button>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="empty-state">
+                    <span class="empty-icon">📭</span>
+                    <span>Нет добавленных путей</span>
+                    <span class="empty-hint">Нажмите "Добавить путь", чтобы указать директорию</span>
+                </div>
+            }
 
-            <input class="setting-input"
-                   type="text"
-                   placeholder="C:\QEX\Extensions"/>
-
-            <button class="browse-btn" @onclick="() => ExtensionDirChange(CancellationToken.None)">
-                Обзор
-            </button>
-
+            <!-- Кнопка добавления пути -->
+            <div class="add-path-section">
+                <div class="manual-input-group">
+                    <input type="text"
+                           class="setting-input"
+                           placeholder="C:\QEX\Extensions или /home/user/extensions"
+                           @bind="_newPath"
+                           @bind:event="oninput" />
+                    <button class="browse-btn" @onclick="BrowseForFolder">
+                        📁 Обзор
+                    </button>
+                    <button class="add-btn" @onclick="AddPath" disabled="@string.IsNullOrWhiteSpace(_newPath)">
+                        ➕ Добавить
+                    </button>
+                </div>
+            </div>
         </div>
-
     </div>
 
+    <!-- Сканирование поддиректорий -->
     <div class="setting-item">
-
         <div class="setting-info">
             <div class="setting-title">
-                Автоматическое обновление
+                🔍 Сканировать поддиректории
             </div>
+            <div class="setting-description">
+                Рекурсивно искать расширения во вложенных папках
+            </div>
+        </div>
+        <label class="switch">
+            <input type="checkbox" @bind="Settings!.IsAutoScanDir" @bind:after="HandleChanged" />
+            <span class="slider"></span>
+        </label>
+    </div>
 
+    <!-- Автообновление -->
+    <div class="setting-item">
+        <div class="setting-info">
+            <div class="setting-title">
+                🔄 Автоматическое обновление
+            </div>
             <div class="setting-description">
                 Автоматически загружать новые версии расширений
             </div>
         </div>
-
         <label class="switch">
-
-            <input type="checkbox"
-                   @bind="Settings!.IsAutoUpdate" />
-
+            <input type="checkbox" @bind="Settings!.IsAutoUpdate" @bind:after="HandleChanged" />
             <span class="slider"></span>
-
         </label>
-
     </div>
-
 </div>
-
 <style>
+    /* Контейнер путей */
+    .paths-container {
+        background: #2f3136;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
 
-.settings-section {
-    width: 100%;
+    /* Список путей */
+    .paths-list {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin-bottom: 16px;
+        max-height: 300px;
+        overflow-y: auto;
+    }
 
-    background: #15171c;
+    /* Элемент пути */
+    .path-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 12px;
+        background: #3a3c43;
+        border-radius: 6px;
+        transition: all 0.2s ease;
+        cursor: move;
+        user-select: none;
+    }
 
-    border: 1px solid #2b2f38;
+        .path-item:hover {
+            background: #4a4c53;
+            transform: translateX(2px);
+        }
 
-    border-radius: 16px;
+        .path-item.dragging {
+            opacity: 0.5;
+            cursor: grabbing;
+        }
 
-    padding: 24px;
+    /* Информация о пути */
+    .path-info {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex: 1;
+        overflow: hidden;
+    }
 
-    box-sizing: border-box;
-}
+    .path-icon {
+        font-size: 18px;
+        flex-shrink: 0;
+    }
 
-.section-title {
-    margin: 0 0 28px 0;
+    .path-text {
+        font-size: 13px;
+        color: #dcddde;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-family: 'Consolas', monospace;
+    }
 
-    font-size: 24px;
-    font-weight: 700;
+    /* Действия с путем */
+    .path-actions {
+        display: flex;
+        gap: 6px;
+        flex-shrink: 0;
+    }
 
-    color: #f2f3f5;
-}
+    .icon-btn {
+        background: none;
+        border: none;
+        font-size: 16px;
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 4px;
+        transition: all 0.2s;
+        opacity: 0.7;
+    }
 
+        .icon-btn:hover {
+            opacity: 1;
+            transform: scale(1.05);
+        }
 
-.setting-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+    .edit-btn:hover {
+        background: #5865f2;
+    }
 
-    gap: 24px;
+    .remove-btn:hover {
+        background: #ed4245;
+    }
 
-    padding: 22px 0;
+    /* Пустое состояние */
+    .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        padding: 40px 20px;
+        background: #3a3c43;
+        border-radius: 8px;
+        margin-bottom: 16px;
+    }
 
-    border-bottom: 1px solid rgba(255,255,255,.05);
-}
+    .empty-icon {
+        font-size: 48px;
+        opacity: 0.5;
+    }
 
-.setting-item:last-child {
-    border-bottom: none;
-    padding-bottom: 0;
-}
-.setting-info {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
+    .empty-hint {
+        font-size: 12px;
+        color: #72767d;
+    }
 
-.setting-title {
-    font-size: 15px;
-    font-weight: 600;
+    /* Секция добавления пути */
+    .add-path-section {
+        border-top: 1px solid #404249;
+        padding-top: 16px;
+    }
 
-    color: #f2f3f5;
-}
+    .manual-input-group {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
 
-.setting-description {
-    font-size: 14px;
+        .manual-input-group .setting-input {
+            flex: 1;
+            background: #3a3c43;
+            border: 1px solid #202225;
+            border-radius: 6px;
+            padding: 8px 12px;
+            color: #fff;
+            font-size: 13px;
+            font-family: 'Consolas', monospace;
+        }
 
-    color: #8e9297;
-}
+            .manual-input-group .setting-input:focus {
+                outline: none;
+                border-color: #5865f2;
+                background: #4a4c53;
+            }
 
-.setting-actions {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
+    .add-btn {
+        background: #23a55a;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        padding: 8px 16px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
 
-.setting-input {
-    width: 340px;
+        .add-btn:hover:not(:disabled) {
+            background: #1e8548;
+            transform: translateY(-1px);
+        }
 
-    background: #1d2027;
+        .add-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
 
-    border: 1px solid #2f3440;
+    .browse-btn {
+        background: #4a4c53;
+        color: #fff;
+        border: none;
+        border-radius: 6px;
+        padding: 8px 16px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
 
-    border-radius: 12px;
+        .browse-btn:hover {
+            background: #5865f2;
+            transform: translateY(-1px);
+        }
 
-    padding: 12px 14px;
+    /* Настройки группы */
+    .setting-group {
+        margin-bottom: 24px;
+    }
 
-    color: white;
+    .setting-header {
+        margin-bottom: 16px;
+    }
 
-    outline: none;
+    .setting-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #fff;
+        margin-bottom: 4px;
+    }
 
-    transition: .2s ease;
-}
+    .setting-description {
+        font-size: 12px;
+        color: #b9bbbe;
+    }
 
-.setting-input:focus {
-    border-color: #5865f2;
+    .setting-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 0;
+        border-top: 1px solid #404249;
+    }
 
-    box-shadow: 0 0 0 4px rgba(88,101,242,.15);
-}
+        .setting-item:first-of-type {
+            border-top: none;
+        }
 
-.browse-btn {
-    border: none;
+    .setting-info {
+        flex: 1;
+    }
 
-    background: #5865f2;
+    /* Toggle Switch */
+    .switch {
+        position: relative;
+        display: inline-block;
+        width: 46px;
+        height: 24px;
+        flex-shrink: 0;
+    }
 
-    color: white;
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
 
-    border-radius: 12px;
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #3a3c43;
+        transition: 0.2s;
+        border-radius: 24px;
+    }
 
-    padding: 11px 18px;
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 2px;
+            bottom: 2px;
+            background-color: #b9bbbe;
+            transition: 0.2s;
+            border-radius: 50%;
+        }
 
-    font-size: 14px;
-    font-weight: 600;
+    input:checked + .slider {
+        background-color: #5865f2;
+    }
 
-    cursor: pointer;
+        input:checked + .slider:before {
+            transform: translateX(22px);
+            background-color: white;
+        }
 
-    transition: .2s ease;
-}
+    /* Скроллбар */
+    .paths-list::-webkit-scrollbar {
+        width: 6px;
+    }
 
-.browse-btn:hover {
-    background: #6d78f5;
-}
+    .paths-list::-webkit-scrollbar-track {
+        background: #202225;
+        border-radius: 3px;
+    }
 
-.switch {
-    position: relative;
-
-    width: 52px;
-    height: 30px;
-
-    display: inline-block;
-}
-
-.switch input {
-    opacity: 0;
-    width: 0;
-    height: 0;
-}
-
-.slider {
-    position: absolute;
-    inset: 0;
-
-    background: #30343d;
-
-    border-radius: 999px;
-
-    cursor: pointer;
-
-    transition: .2s ease;
-}
-
-.slider::before {
-    content: "";
-
-    position: absolute;
-
-    width: 22px;
-    height: 22px;
-
-    left: 4px;
-    top: 4px;
-
-    background: white;
-
-    border-radius: 50%;
-
-    transition: .2s ease;
-}
-
-.switch input:checked + .slider {
-    background: #5865f2;
-}
-
-.switch input:checked + .slider::before {
-    transform: translateX(22px);
-}
-
-
+    .paths-list::-webkit-scrollbar-thumb {
+        background: #4a4c53;
+        border-radius: 3px;
+    }
 </style>
-
 @code {
-
     [Parameter] public ExtensionSetting? Settings { get; set; }
-
     [Parameter] public EventCallback OnSettingsChanged { get; set; }
 
-    [Inject]
-    private IFolderPicker folderPicker { get; set; } = default!;
-    private async Task HandleChanged()
+    [Inject] private IFolderPicker FolderPicker { get; set; } = default!;
+
+    private string _newPath = string.Empty;
+    private int? _dragStartIndex;
+    private bool IsDragging => _dragStartIndex.HasValue;
+
+    protected override async Task OnInitializedAsync()
     {
-        //await OnSettingsChanged.InvokeAsync();
+        Settings?.LoadSetting(DataFilePath.OptionPath);
     }
-    private async Task ExtensionDirChange(CancellationToken cancellationToken)
+    private async Task BrowseForFolder()
     {
         try
         {
-            // Проверяем, что folderPicker не null
-            if (folderPicker == null)
+            var result = await FolderPicker.PickAsync(CancellationToken.None);
+            if (result.IsSuccessful && result.Folder != null)
             {
-                Console.WriteLine("folderPicker is null");
-                return;
-            }
-
-            var res = await folderPicker.PickAsync(cancellationToken);
-            res.EnsureSuccess();
-
-            if (res.IsSuccessful && res.Folder != null)
-            {
-                // Если ExtensionPath - это строка
-                if (Settings != null)
-                {
-                    Settings.ExtensionPath.Add(res.Folder.Path);
-                    await OnSettingsChanged.InvokeAsync();
-                }
+                _newPath = result.Folder.Path;
+                await InvokeAsync(StateHasChanged);
             }
         }
         catch (Exception ex)
@@ -270,6 +426,105 @@
             Console.WriteLine($"Error picking folder: {ex.Message}");
         }
     }
+
+    private async Task AddPath()
+    {
+        if (string.IsNullOrWhiteSpace(_newPath))
+            return;
+
+        // Проверка на дубликаты
+        if (Settings!.ExtensionPath.Any(p => 
+            string.Equals(p, _newPath, StringComparison.OrdinalIgnoreCase)))
+        {
+            // Можно показать уведомление о дубликате
+            await ShowNotification("Этот путь уже добавлен", "warning");
+            return;
+        }
+
+        Settings.ExtensionPath.Add(_newPath.Trim());
+        _newPath = string.Empty;
+        await HandleChanged();
     }
 
+    private async Task RemovePath(int index)
+    {
+        if (index >= 0 && index < Settings!.ExtensionPath.Count)
+        {
+            var path = Settings.ExtensionPath[index];
+            var confirm = await JSRuntime.InvokeAsync<bool>("confirm", 
+                $"Удалить путь:\n{path}");
+            
+            if (confirm)
+            {
+                Settings.ExtensionPath.RemoveAt(index);
+                await HandleChanged();
+            }
+        }
+    }
+
+    private async Task EditPath(int index)
+    {
+        if (index >= 0 && index < Settings!.ExtensionPath.Count)
+        {
+            var oldPath = Settings.ExtensionPath[index];
+            var newPath = await JSRuntime.InvokeAsync<string>("prompt", 
+                "Редактировать путь к расширениям:", oldPath);
+            
+            if (!string.IsNullOrEmpty(newPath) && newPath != oldPath)
+            {
+                // Проверка на дубликаты при редактировании
+                if (Settings.ExtensionPath.Any(p => 
+                    string.Equals(p, newPath, StringComparison.OrdinalIgnoreCase) && p != oldPath))
+                {
+                    await ShowNotification("Такой путь уже существует", "warning");
+                    return;
+                }
+                
+                Settings.ExtensionPath[index] = newPath;
+                await HandleChanged();
+            }
+        }
+    }
+
+    // Drag & Drop для сортировки
+    private void OnDragStart(int index)
+    {
+        _dragStartIndex = index;
+    }
+
+    private void OnDragOver(DragEventArgs e)
+    {
+        e.DataTransfer.DropEffect = "move";
+    }
+
+    private async Task OnDrop(int targetIndex)
+    {
+        if (_dragStartIndex.HasValue && _dragStartIndex.Value != targetIndex)
+        {
+            var item = Settings!.ExtensionPath[_dragStartIndex.Value];
+            Settings.ExtensionPath.RemoveAt(_dragStartIndex.Value);
+            Settings.ExtensionPath.Insert(targetIndex, item);
+            await HandleChanged();
+        }
+        
+        _dragStartIndex = null;
+    }
+
+    private async Task HandleChanged()
+    {
+        await OnSettingsChanged.InvokeAsync();
+    }
+
+    private string TruncatePath(string path, int maxLength = 60)
+    {
+        if (path.Length <= maxLength) return path;
+        return "..." + path.Substring(path.Length - maxLength + 3);
+    }
+
+    private async Task ShowNotification(string message, string type)
+    {
+        // Используйте вашу систему уведомлений
+        Console.WriteLine($"[{type}] {message}");
+        // Или вызовите callback для показа уведомления
+    }
 }

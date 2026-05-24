@@ -11,6 +11,11 @@ namespace QEX.Resources.Data
         public ExtensionSetting? extensionSetting = new();
         public InterfaceSetting? interfaceSetting = new();
         public SecuritySetting? securitySetting = new();
+        public Options()
+        {
+            //if (!File.Exists(SettingFilePath)) TODO: добавить проверку на наличие файла 
+               // File.Create(SettingFilePath);          Тут или при инициализации приложения.
+        }
 
         public void LoadSetting()
         {
