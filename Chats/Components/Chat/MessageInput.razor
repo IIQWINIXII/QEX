@@ -1,0 +1,73 @@
+﻿@using Chats.Services;
+@using QEX_Lib.ClientDB.Model;
+@inject ChatService Chat;
+
+<div class="input-box">
+    <button>Файл</button>
+    <input @bind="Text" @bind:event="oninput" placeholder="Введите сообщение..." @onkeydown="HandleKeyDown" />
+    <button @onclick="Send">Отправить</button>
+    <button>Ещё</button>
+</div>
+
+
+<style>
+    .input-box {
+        position: absolute;
+        bottom: 0;
+        height: 30px;
+        width: 100%;
+        display: flex;
+        gap: 10px;
+        background: #2b2b2b;
+    }
+
+    input {
+        flex: 1;
+        padding: 8px;
+        border-radius: 4px;
+        border: none;
+    }
+
+    button {
+        padding: 8px 12px;
+        background: #5865F2;
+        color: white;
+        border: none;
+        border-radius: 4px;
+    }
+</style>
+
+@code {
+    private string Text = "";
+
+    private async Task LoadMessages()
+    {
+        
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await Send();
+        }
+    }
+
+
+    private async Task Send()
+    {
+        if (string.IsNullOrWhiteSpace(Text))
+            return;
+
+        var Sender = new User() { Name = "Антон" }; // TODO: заменить на текущего пользователя
+
+        await Chat.SendMessage(Sender, Text); // TODO: заменить на текущего пользователя
+
+        Text = "";
+    }
+
+    private async Task WriteMessage()
+    {
+        
+    }
+}

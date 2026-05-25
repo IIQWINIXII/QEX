@@ -15,4 +15,8 @@
     <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="10.0.8" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\QEX_Lib\QEX_Lib.csproj" />
+  </ItemGroup>
+
 </Project>
