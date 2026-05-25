@@ -5,7 +5,7 @@ namespace QEX_Lib.ClientDB.Model
 {
     public class Extension : IBaseModel
     {
-        public int ID { get; set; }
+        public string ID { get; set; }
 
         public string Name { get; set; } = "";
         public string Description { get; set; } = "";

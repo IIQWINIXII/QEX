@@ -60,11 +60,11 @@
     {
         ExtensionService.CloseExtension();
 
-        UserService.SetUser(new User(){ID = 2, Name = "John Doe" }); 
+        UserService.SetUser(new User(){ID = "123", Name = "John Doe" }); 
 
         var parameters = new Dictionary<string, object>
         {
-            { "User", UserService.CurrentUser }
+            { "User", UserService?.CurrentUser ?? new User() }
         };
 
         ExtensionService.OpenExtension<UserProfileExtension>(parameters);

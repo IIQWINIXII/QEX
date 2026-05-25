@@ -10,13 +10,13 @@ namespace QEX_Lib.ClientDB.Model
 {
     public class User : IBaseModel
     {
-        public int ID { get; set; }
+        public string? ID { get; set; }
         [MaxLength(128)]   
         public string? Name { get; set; }
         [MaxLength(128)]
         [Key]
         public string? Login { get; set; }
-        public int CurrentAvatarID { get; set; }
+        public string? CurrentAvatarID { get; set; }
         [MaxLength(128)]
         public string? Password { get; set; }
         [EmailAddress]

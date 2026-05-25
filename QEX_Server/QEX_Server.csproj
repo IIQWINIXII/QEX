@@ -6,4 +6,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\QEX_Lib\QEX_Lib.csproj" />
+  </ItemGroup>
+
 </Project>

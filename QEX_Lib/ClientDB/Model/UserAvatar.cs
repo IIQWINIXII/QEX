@@ -11,7 +11,7 @@ namespace QEX_Lib.ClientDB.Model
     public class UserAvatar : IBaseModel
     {
         [Key]
-        public int ID { get; set; }
+        public string? ID { get; set; }
         /// <summary>
         /// ID_User: Need to show advanced profile
         /// </summary>
@@ -32,12 +32,12 @@ namespace QEX_Lib.ClientDB.Model
     public class UserAvatarList : IBaseModelList
     {
         public List<UserAvatar> Items { get; set; } = new();
-        public UserAvatar GetByID(int ID) =>
+        public UserAvatar GetByID(string ID) =>
             Items.First(A => A.ID == ID);
-        public string GetAvatarBase64ByID(int ID) =>
+        public string GetAvatarBase64ByID(string ID) =>
             Convert.ToBase64String(GetByID(ID).IMG);
 
-        public string GetImageFromBase64ByID(int ID) =>
+        public string GetImageFromBase64ByID(string ID) =>
             $"data:image/{GetByID(ID).Type};base64,{GetAvatarBase64ByID(ID)}";
 
         public void Load(ClientContext context)

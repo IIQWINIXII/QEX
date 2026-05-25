@@ -9,7 +9,7 @@ namespace QEX_Lib.ClientDB.Model
 {
     public class CustomProfileField : IBaseModel
     {
-        public int ID { get; set; }
+        public string? ID { get; set; }
         /// <summary>
         /// ID_FieldPosition: FK to posiotion element
         /// </summary>

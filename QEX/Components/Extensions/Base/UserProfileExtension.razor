@@ -6,7 +6,7 @@
 
         <div class="profile-avatar-wrapper">
             <div class="profile-avatar">
-                @if (User.CurrentAvatarID > 0)
+                @if (!string.IsNullOrEmpty(User.CurrentAvatarID))
                 {
                     <img src="@UserAvatarList.GetImageFromBase64ByID(User.CurrentAvatarID)"
                          class="avatar-img" />

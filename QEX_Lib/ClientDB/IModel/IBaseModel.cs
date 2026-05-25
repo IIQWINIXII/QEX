@@ -8,7 +8,7 @@ namespace QEX_Lib.ClientDB.IModel
 {
     public interface IBaseModel
     {
-        public int ID { get; set; }
+        public string ID { get; set; }
         public string? Name { get; set; }
         public void Load(ClientContext context);
         public void Save(ClientContext context);

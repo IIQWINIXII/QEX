@@ -12,7 +12,7 @@ namespace QEX_Lib.ClientDB.Model
         /// <summary>
         /// ID: Need to select setting preset
         /// </summary>
-        public int ID { get; set; }
+        public string? ID { get; set; }
         public string? Name { get; set; }
         public string? Description { get; set; }
         public int Type { get; set; } = 0;

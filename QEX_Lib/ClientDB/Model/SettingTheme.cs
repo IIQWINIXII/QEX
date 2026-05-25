@@ -12,7 +12,7 @@ namespace QEX_Lib.ClientDB.Model
     /// </summary>
     public class SettingTheme : IBaseModel
     {
-        public int ID { get; set; }
+        public string? ID { get; set; }
         public string? Name { get; set; }
         public string? BackgroundColor { get; set; }
         public string? FirstColor { get; set; }
