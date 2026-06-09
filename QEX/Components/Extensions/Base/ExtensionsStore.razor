@@ -1,7 +1,9 @@
 ﻿@using QEX.Abstractions.Interface;
 @using QEX.Components.Extensions.Classes;
 @using QEX.Resources.Data;
+@using QEX_Lib.QEX_API.Abtractions.Interface
 @inject IExtensionService ExtensionService;
+@inject IDynamicServiceRegistry Registry
 
 
 <div class="store-container">
@@ -211,7 +213,7 @@
 
     protected override void OnInitialized()
     {
-        var loader = new ExtensionLoader(ExtensionService);
+        var loader = new ExtensionLoader(ExtensionService, Registry);
         installedExtensions = loader.LoadInstalled();
         base.OnInitialized();
     }

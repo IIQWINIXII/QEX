@@ -1,8 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Win32;
-using QEX_Lib.QEX.Abstractions.Interface;
-using QEX_Lib.QEX.Abstractions.Service;
+using QEX_Lib.QEX_API.Abtractions.Interface;
 using QNums.Abstractions.Interfaces;
 using QNums.Abstractions.Service;
 using QNums.Components.Classes;
@@ -17,7 +16,6 @@ namespace Module
         public static void Register(IDynamicServiceRegistry registry)
         {
             registry.RegisterScoped<ICalculationService, CalculationService>();
-            Console.WriteLine("Plugin services registered!");
         }
     }
 }

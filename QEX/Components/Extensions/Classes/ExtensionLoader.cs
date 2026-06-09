@@ -1,13 +1,16 @@
 ﻿using QEX.Abstractions.Interface;
+using QEX.Resources.Data;
+using QEX_Lib.QEX_API.Abtractions.Interface;
+using System.Reflection;
 using System.Runtime.Loader;
 using System.Text.Json;
-using QEX.Resources.Data;
 
 namespace QEX.Components.Extensions.Classes
 {
     public class ExtensionLoader
     {
         private readonly IExtensionService _extensionService;
+        private readonly IDynamicServiceRegistry _registry;
         private Options _options = new();
 
         // Пока путь задаём строкой (пока что потом переписать на получение путей из настроек)
@@ -16,10 +19,11 @@ namespace QEX.Components.Extensions.Classes
            // @"C:\QEX\QEX\ArtFlow\bin\Debug";
 
         private readonly List<string>? ExtensionsRoots = [];
-        public ExtensionLoader(IExtensionService extensionService)
+        public ExtensionLoader(IExtensionService extensionService, IDynamicServiceRegistry registry)
         {
             _extensionService = extensionService;
             _options.LoadSetting();
+            _registry = registry;
             //extensionaRoots = _options?.extensionSetting?.ExtensionPath ?? []; // переписать структуру полчения 
         }                                                               // примерно черз чтение каждого пути
 
@@ -49,6 +53,17 @@ namespace QEX.Components.Extensions.Classes
                     var type = asm.GetType(manifest.RootComponent);
                     if (type == null)
                         continue;
+
+                    var moduleType = asm.GetTypes()
+                        .FirstOrDefault(t => t.Name == "Module");
+
+                    var registerMethod = moduleType?
+                        .GetMethod("Register", BindingFlags.Public | BindingFlags.Static);
+
+                    if (registerMethod != null)
+                    {
+                        registerMethod.Invoke(null, new object[] { _registry });
+                    }
 
                     _extensionService.RegisterExtension(type, manifest.Name);
 
