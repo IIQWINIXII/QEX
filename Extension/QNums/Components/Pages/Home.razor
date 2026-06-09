@@ -1,0 +1,155 @@
+﻿@using QNums.Abstractions.Interfaces
+@using QNums.Components.Classes
+@inject ICalculationService Calculator
+
+<div class="calculator-container">
+    <div class="display-area">
+        <div class="formula-display">@calcModel.Formula</div>
+        <div class="current-display">@calcModel.CurrentInput</div>
+        @if (!string.IsNullOrEmpty(calcModel.LastResult))
+        {
+            <div class="last-result-display">
+                Последний результат: <strong>@calcModel.LastResult</strong>
+            </div>
+        }
+    </div>
+
+    <div class="keyboard">
+        <!-- Цифры и операторы -->
+        <button class="calc-btn" @onclick='() => AppendNumber("7")'>7</button>
+        <button class="calc-btn" @onclick='() => AppendNumber("8")'>8</button>
+        <button class="calc-btn" @onclick='() => AppendNumber("9")'>9</button>
+        <button class="calc-btn operator" @onclick='() => AppendOperator("/")'>÷</button>
+
+        <button class="calc-btn" @onclick='() => AppendNumber("4")'>4</button>
+        <button class="calc-btn" @onclick='() => AppendNumber("5")'>5</button>
+        <button class="calc-btn" @onclick='() => AppendNumber("6")'>6</button>
+        <button class="calc-btn operator" @onclick='() => AppendOperator("*")'>×</button>
+
+        <button class="calc-btn" @onclick='() => AppendNumber("1")'>1</button>
+        <button class="calc-btn" @onclick='() => AppendNumber("2")'>2</button>
+        <button class="calc-btn" @onclick='() => AppendNumber("3")'>3</button>
+        <button class="calc-btn operator" @onclick='() => AppendOperator("-")'>-</button>
+
+        <button class="calc-btn" @onclick='() => AppendNumber("0")'>0</button>
+        <button class="calc-btn" @onclick='() => AppendPoint()'>.</button>
+        <button class="calc-btn action" @onclick='Clear'>C</button>
+        <button class="calc-btn operator" @onclick='() => AppendOperator("+")'>+</button>
+
+        <button class="calc-btn action backspace" @onclick="Backspace">⌫</button>
+        <button class="calc-btn equals" @onclick="Calculate">=</button>
+    </div>
+
+    <div class="extensions-panel">
+        <button class="ext-btn" @onclick='() => AppendFunction("sqrt")'>√</button>
+        <button class="ext-btn" @onclick='() => AppendFunction("pow2")'>x²</button>
+        <button class="ext-btn" @onclick='() => AppendFunction("pow3")'>x³</button>
+    </div>
+</div>
+
+@code {
+    private CalculatorModel calcModel = new();
+
+    private void AppendNumber(string number)
+    {
+        if (calcModel.IsResultDisplayed)
+        {
+            calcModel.CurrentInput = number;
+            calcModel.IsResultDisplayed = false;
+        }
+        else
+        {
+            calcModel.CurrentInput += number;
+        }
+        UpdateFormula();
+    }
+
+    private void AppendPoint()
+    {
+        if (!calcModel.CurrentInput.Contains("."))
+            calcModel.CurrentInput += ".";
+        UpdateFormula();
+    }
+
+    private void AppendOperator(string op)
+    {
+        if (calcModel.IsResultDisplayed)
+        {
+            calcModel.CurrentInput = calcModel.LastResult;
+            calcModel.IsResultDisplayed = false;
+        }
+
+        if (string.IsNullOrEmpty(calcModel.CurrentInput) && string.IsNullOrEmpty(calcModel.Formula))
+            return;
+
+        UpdateFormula();
+        calcModel.Formula += op;
+        calcModel.CurrentInput = "";
+    }
+
+    private void AppendFunction(string func)
+    {
+        if (string.IsNullOrEmpty(calcModel.CurrentInput) && !calcModel.IsResultDisplayed)
+            return;
+
+        double value;
+        if (calcModel.IsResultDisplayed)
+            value = double.Parse(calcModel.LastResult);
+        else
+            value = double.Parse(calcModel.CurrentInput);
+
+        double result = func switch
+        {
+            "sqrt" => Math.Sqrt(value),
+            "pow2" => Math.Pow(value, 2),
+            "pow3" => Math.Pow(value, 3),
+            _ => value
+        };
+
+        calcModel.CurrentInput = result.ToString();
+        calcModel.IsResultDisplayed = true;
+        calcModel.LastResult = result.ToString();
+        UpdateFormula();
+    }
+
+    private void UpdateFormula()
+    {
+        calcModel.Formula = string.IsNullOrEmpty(calcModel.Formula)
+            ? calcModel.CurrentInput
+            : calcModel.Formula + calcModel.CurrentInput;
+        calcModel.CurrentInput = "";
+    }
+
+    private async void Calculate()
+    {
+        if (string.IsNullOrEmpty(calcModel.Formula))
+            return;
+
+        string fullExpression = calcModel.Formula + calcModel.CurrentInput;
+        double result = Calculator.Evaluate(fullExpression);
+
+        
+
+        string resultStr = result.ToString();
+        calcModel.LastResult = resultStr;
+        calcModel.CurrentInput = resultStr;
+        calcModel.Formula = "";
+        calcModel.IsResultDisplayed = true;
+
+        // Фокус переходит на результат: так как это Blazor Hybrid, просто обновляем состояние
+        StateHasChanged();
+
+        // Небольшая задержка, чтобы визуально показать, что результат стал активным
+        await Task.Delay(50);
+    }
+
+    private void Clear()
+    {
+        calcModel.Clear();
+    }
+
+    private void Backspace()
+    {
+        calcModel.Backspace();
+    }
+}

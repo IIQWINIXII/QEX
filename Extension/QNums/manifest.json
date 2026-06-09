@@ -1,0 +1,8 @@
+{
+  "Id": "qex.nums",
+  "Name": "QEX Nums",
+  "Description": "Use this extension from calculation",
+  "Version": "1.0.0",
+  "AssemblyFile": "QNums.dll",
+  "RootComponent": "QNums.Components.Pages.Home"
+}
