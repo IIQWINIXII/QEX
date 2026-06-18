@@ -8,5 +8,7 @@ namespace QEX_Lib.QEX_API.Abtractions.Interface
     {
         T? GetService<T>() where T : class;
         object? GetService(Type type);
+        T? SetService<T>() where T : class;
+        object SetService(Type type);
     }
 }

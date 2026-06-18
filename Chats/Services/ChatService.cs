@@ -7,7 +7,7 @@ using System.Text;
 
 namespace Chats.Services
 {
-    public class ChatService
+    public class ChatService : IChatService
     {
         // Режимы боковой панели
         public enum ChatMode

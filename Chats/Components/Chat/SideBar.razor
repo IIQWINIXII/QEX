@@ -1,19 +1,21 @@
-﻿@using Chats.Services
-@using Chats.Classes
-@inject ChatService Chat
+﻿@using Chats.Classes
+@using Chats.Services
+@using QEX_Lib.QEX_API.Abtractions.Interface
+@inject IPluginServiceProvider Plugins;
+@implements IDisposable
 
 <div class="sidebar-root">
     <!-- Левая колонка с иконками групп и ЛС -->
     <div class="servers-bar">
         <div class="server-icon dm"
              title="Личные сообщения"
-             @onclick="() => Chat.SwitchMode(ChatService.ChatMode.DirectMessages)">
+             @onclick="() => Chat?.SwitchMode(ChatService.ChatMode.DirectMessages)">
             ЛС
         </div>
 
-        @foreach (var g in Chat.Guilds)
+        @foreach (var g in Chat?.Guilds ?? new())
         {
-            <div class="server-icon @(Chat.CurrentGuild == g ? "active" : "")"
+            <div class="server-icon @(Chat?.CurrentGuild == g ? "active" : "")"
                  title="@g.Name"
                  @onclick="() => OnGuildClick(g)">
                 @g.Name.Substring(0, 1)
@@ -24,19 +26,19 @@
     <!-- Правая часть боковой панели -->
     <div class="sidebar-main">
         <div class="top-tabs">
-            <button class="tab-btn @(Chat.CurrentMode == ChatService.ChatMode.Guilds ? "active" : "")"
-                    @onclick="() => Chat.SwitchMode(ChatService.ChatMode.Guilds)">
+            <button class="tab-btn @(Chat?.CurrentMode == ChatService.ChatMode.Guilds ? "active" : "")"
+                    @onclick="() => Chat?.SwitchMode(ChatService.ChatMode.Guilds)">
                 Группы
             </button>
 
-            <button class="tab-btn @(Chat.CurrentMode == ChatService.ChatMode.DirectMessages ? "active" : "")"
-                    @onclick="() => Chat.SwitchMode(ChatService.ChatMode.DirectMessages)">
+            <button class="tab-btn @(Chat?.CurrentMode == ChatService.ChatMode.DirectMessages ? "active" : "")"
+                    @onclick="() => Chat?.SwitchMode(ChatService.ChatMode.DirectMessages)">
                 Личные
             </button>
         </div>
 
         <div class="sidebar-content">
-            @if (Chat.CurrentMode == ChatService.ChatMode.Guilds)
+            @if (Chat?.CurrentMode == ChatService.ChatMode.Guilds)
             {
                 <!-- здесь показываем каналы выбранной группы -->
                 <ChannelList />
@@ -126,14 +128,27 @@
 </style>
 
 @code {
+    private IChatService? Chat;
+
     private void OnGuildClick(Guild g)
     {
-        Chat.SelectGuild(g);
-        Chat.SwitchMode(ChatService.ChatMode.Guilds);
+        Chat?.SelectGuild(g);
+        Chat?.SwitchMode(ChatService.ChatMode.Guilds);
     }
 
     protected override void OnInitialized()
     {
-        Chat.OnUIChanged += StateHasChanged;
+        Chat = Plugins?.GetService<IChatService>() // Объявлять сервисы только при инициализации так как если раньше
+            ?? Plugins?.SetService<IChatService>(); // то создаються новые экземпляры при обновлении
+
+        Chat?.OnUIChanged += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        if (Chat is not null)
+        {
+            Chat.OnUIChanged -= StateHasChanged;
+        }
     }
 }

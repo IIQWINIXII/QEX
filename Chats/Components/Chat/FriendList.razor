@@ -1,6 +1,7 @@
 ﻿@using Chats.Services
 @using QEX_Lib.ClientDB.Model
-@inject ChatService Chat
+@using QEX_Lib.QEX_API.Abtractions.Interface;
+@inject IPluginServiceProvider Plugins;
 
 <div class="friend-list">
     @foreach (var friend in Friends)
@@ -29,22 +30,24 @@
 </style>
 
 @code {
+    public IChatService? Chat => Plugins?.GetService<IChatService>()
+           ?? Plugins?.SetService<IChatService>();
     // TODO: подгрузить друзей из базы
     List<User> Friends = new()
     {
-        new User { Name = "Мария", ID = 1 },
-        new User { Name = "Иван", ID = 2 }
+        new User { Name = "Мария", ID = "1" },
+        new User { Name = "Иван", ID = "2" }
     };
 
     private void OpenChat(User friend)
     {
-        var chat = Chat.GetOrCreateDirectChat(friend);
-        Chat.SelectDirectChat(chat);
+        var chat = Chat?.GetOrCreateDirectChat(friend);
+        Chat?.SelectDirectChat(chat);
     }
 
     protected override void OnInitialized()
     {
-        Chat.OnUIChanged += StateHasChanged;
+        Chat?.OnUIChanged += StateHasChanged;
     }
 
 }

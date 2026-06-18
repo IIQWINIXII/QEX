@@ -1,6 +1,7 @@
 ﻿@using Chats.Services;
 @using QEX_Lib.ClientDB.Model;
-@inject ChatService Chat;
+@using QEX_Lib.QEX_API.Abtractions.Interface;
+@inject IPluginServiceProvider Plugins;
 
 <div class="input-box">
     <button>Файл</button>
@@ -38,6 +39,8 @@
 </style>
 
 @code {
+    public IChatService? Chat => Plugins?.GetService<IChatService>()
+           ?? Plugins?.SetService<IChatService>();
     private string Text = "";
 
     private async Task LoadMessages()
@@ -61,7 +64,7 @@
 
         var Sender = new User() { Name = "Антон" }; // TODO: заменить на текущего пользователя
 
-        await Chat.SendMessage(Sender, Text); // TODO: заменить на текущего пользователя
+        await Chat?.SendMessage(Sender, Text); // TODO: заменить на текущего пользователя
 
         Text = "";
     }

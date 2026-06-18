@@ -1,5 +1,6 @@
 ﻿@using Chats.Services
-@inject ChatService Chat
+@using QEX_Lib.QEX_API.Abtractions.Interface;
+@inject IPluginServiceProvider Plugins;
 
 <div>
     @foreach (var g in Chat.Guilds)
@@ -32,9 +33,12 @@
 </div>
 
 @code {
+    public IChatService? Chat => Plugins?.GetService<IChatService>()
+           ?? Plugins?.SetService<IChatService>();
+
     protected override void OnInitialized()
     {
-        Chat.OnUIChanged += StateHasChanged;
+        Chat?.OnUIChanged += StateHasChanged;
     }
 
 }
