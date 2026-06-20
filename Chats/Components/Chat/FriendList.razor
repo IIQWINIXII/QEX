@@ -30,8 +30,7 @@
 </style>
 
 @code {
-    public IChatService? Chat => Plugins?.GetService<IChatService>()
-           ?? Plugins?.SetService<IChatService>();
+    public IChatService? Chat;
     // TODO: подгрузить друзей из базы
     List<User> Friends = new()
     {
@@ -47,6 +46,8 @@
 
     protected override void OnInitialized()
     {
+        Chat = Plugins?.GetService<IChatService>()
+           ?? Plugins?.SetService<IChatService>();
         Chat?.OnUIChanged += StateHasChanged;
     }
 

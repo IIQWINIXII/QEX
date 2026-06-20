@@ -116,6 +116,7 @@ namespace Chats.Services
                 return; // Нет выбранного канала или личного чата
 
             OnMessagesChanged?.Invoke();
+            OnUIChanged?.Invoke();  
         }
     }
 }

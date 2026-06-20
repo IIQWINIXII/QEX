@@ -10,4 +10,8 @@
     <ProjectReference Include="..\QEX_Lib\QEX_Lib.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Data\" />
+  </ItemGroup>
+
 </Project>

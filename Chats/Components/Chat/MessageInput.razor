@@ -39,9 +39,15 @@
 </style>
 
 @code {
-    public IChatService? Chat => Plugins?.GetService<IChatService>()
-           ?? Plugins?.SetService<IChatService>();
+    public IChatService? Chat;
     private string Text = "";
+
+    protected override void OnInitialized()
+    {
+        Chat = Plugins?.GetService<IChatService>()
+           ?? Plugins?.SetService<IChatService>();
+        Chat?.OnUIChanged += StateHasChanged;
+    }
 
     private async Task LoadMessages()
     {

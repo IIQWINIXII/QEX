@@ -1,0 +1,8 @@
+{
+  "Id": "qex.admin",
+  "Name": "QEX Admin",
+  "Description": "Use this extension for administration",
+  "Version": "1.0.0",
+  "AssemblyFile": "QAdmin.dll",
+  "RootComponent": "QAdmin.Components.Pages.Home"
+}

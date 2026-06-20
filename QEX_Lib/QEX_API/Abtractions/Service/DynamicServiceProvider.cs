@@ -29,9 +29,13 @@ namespace QEX_Lib.QEX_API.Abtractions.Service
             if (_singletons.TryGetValue(type, out var instance))
                 return instance;
 
-            // 2. Если нет — создаём новый экземпляр через фабрику
+            // 2. Если нет — создаём новый экземпляр через фабрику и кешируем как singleton
             if (_factories.TryGetValue(type, out var factory))
-                return factory(_fallback);
+            {
+                var newInstance = factory(_fallback);
+                _singletons[type] = newInstance;
+                return newInstance;
+            }
 
             // 3. Ничего нет — возвращаем null
             return null;
