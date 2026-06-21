@@ -47,6 +47,21 @@ namespace QEX.Abstractions.Service
 
             OpenExtension(type, parameters);
         }
+        public event Action<Type, Dictionary<string, object>>? OnOpenExtensionInNewWindow;
+        public void OpenExtensionWindow(Type componentType, Dictionary<string, object>? parameters = null)
+        {
+            if (!typeof(ComponentBase).IsAssignableFrom(componentType))
+                throw new("Type is not ComponentBase");
+
+            // вызываем событие, чтобы хост открыл окно
+            OnOpenExtensionInNewWindow?.Invoke(componentType, parameters ?? new());
+        }
+        public void OpenExtensionWindowByName(string name, Dictionary<string, object>? parameters = null)
+        {
+            if (!_extensions.TryGetValue(name, out var type))
+                throw new Exception($"Extension '{name}' not registered.");
+            OpenExtensionWindow(type, parameters);
+        }
 
         public void RegisterExtension(Type componentType, string tag)
         {

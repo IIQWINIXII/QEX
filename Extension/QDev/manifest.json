@@ -1,0 +1,8 @@
+{
+  "Id": "qex.dev",
+  "Name": "QEX Developer",
+  "Description": "Use this extension for development",
+  "Version": "1.0.0",
+  "AssemblyFile": "QDev.dll",
+  "RootComponent": "QDev.Components.Pages.Home"
+}

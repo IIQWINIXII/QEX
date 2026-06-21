@@ -1,4 +1,5 @@
-﻿@using QEX.Abstractions.Interface;
+﻿@using Microsoft.AspNetCore.Components.WebView.Maui
+@using QEX.Abstractions.Interface;
 @using QEX.Components.Extensions.Classes;
 @using QEX.Resources.Data;
 @using QEX_Lib.QEX_API.Abtractions.Interface
@@ -68,7 +69,7 @@
     }
 
     .store-search {
-        width: 100%;
+        width: 97%;
         padding: 10px 14px;
         border-radius: 6px;
         border: none;
@@ -215,6 +216,7 @@
     {
         var loader = new ExtensionLoader(ExtensionService, Registry);
         installedExtensions = loader.LoadInstalled();
+        ExtensionService.OnOpenExtensionInNewWindow += OpenExtensionWindow;
         base.OnInitialized();
     }
 
@@ -226,12 +228,39 @@
         {
             ExtensionService.CloseExtension();
             ExtensionService.OpenExtensionByName(name, new Dictionary<string, object>());
+            //ExtensionService.OpenExtensionWindowByName(name, new Dictionary<string, object>()); // открытие через новое окно
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Failed to open extension: {ex.Message}");
             ExtensionService.CloseExtension();
         }
+    }
+
+    private void OpenExtensionWindow(Type componentType, Dictionary<string, object> parameters)
+    {
+        var window = new Window
+        {
+            Title = componentType.Name,
+            Page = new ContentPage
+            {
+                Content = new BlazorWebView
+                {
+                    HostPage = "wwwroot/index.html",
+                    RootComponents =
+                {
+                    new RootComponent
+                    {
+                        Selector = "#app",
+                        ComponentType = componentType,
+                        Parameters = parameters
+                    }
+                }
+                }
+            }
+        };
+
+        Application.Current?.OpenWindow(window);
     }
 
     IEnumerable<ExtensionInfo> SearchExtensions()
