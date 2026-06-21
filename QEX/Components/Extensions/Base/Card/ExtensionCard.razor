@@ -1,0 +1,46 @@
+﻿@using Microsoft.AspNetCore.Components.WebView.Maui
+@using QEX.Abstractions.Interface
+@using QEX.Components.Extensions.Classes
+@inject IExtensionService ExtensionService;
+
+<div class="store-card" @onclick="() => OpenExtension(ext?.Manifest?.Name ?? string.Empty)">
+    <h4>@ext?.Manifest?.Name</h4>
+    <p>@ext?.Manifest?.Description</p>
+    <button @onclick="() => OpenExtensionWindow(ext?.Manifest?.Name ?? string.Empty)" style="width: 15px; height: 15px">...</button>
+</div>
+
+@code {
+    [Parameter] public ExtensionInfo? ext { get; set; }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+    }
+
+    void OpenExtension(string name)
+    {
+        try
+        {
+            ExtensionService.CloseExtension();
+            ExtensionService.OpenExtensionByName(name, new Dictionary<string, object>());
+            //ExtensionService.OpenExtensionWindowByName(name, new Dictionary<string, object>()); // открытие через новое окно
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to open extension: {ex.Message}");
+            ExtensionService.CloseExtension();
+        }
+    }
+    void OpenExtensionWindow(string name)
+    {
+        try
+        {
+            ExtensionService.OpenExtensionWindowByName(name, new Dictionary<string, object>());
+        }
+        catch
+        {
+            Console.WriteLine("Error failed to open extension");
+            ExtensionService.CloseExtension();
+        }
+    }
+}

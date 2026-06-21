@@ -1,5 +1,6 @@
 ﻿@using Microsoft.AspNetCore.Components.WebView.Maui
 @using QEX.Abstractions.Interface;
+@using QEX.Components.Extensions.Base.Card
 @using QEX.Components.Extensions.Classes;
 @using QEX.Resources.Data;
 @using QEX_Lib.QEX_API.Abtractions.Interface
@@ -43,10 +44,7 @@
         <div class="store-grid">
             @foreach (var ext in SearchExtensions())
             {
-                <div class="store-card" @onclick="() => OpenExtension(ext.Manifest.Name)">
-                    <h4>@ext.Manifest.Name</h4>
-                    <p>@ext.Manifest.Description</p>
-                </div>
+                <ExtensionCard ext="ext"></ExtensionCard>
             }
         </div>
     }
@@ -216,52 +214,10 @@
     {
         var loader = new ExtensionLoader(ExtensionService, Registry);
         installedExtensions = loader.LoadInstalled();
-        ExtensionService.OnOpenExtensionInNewWindow += OpenExtensionWindow;
         base.OnInitialized();
     }
 
     void SwitchTab(StoreTab tab) => ActiveTab = tab;
-
-    void OpenExtension(string name)
-    {
-        try
-        {
-            ExtensionService.CloseExtension();
-            ExtensionService.OpenExtensionByName(name, new Dictionary<string, object>());
-            //ExtensionService.OpenExtensionWindowByName(name, new Dictionary<string, object>()); // открытие через новое окно
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Failed to open extension: {ex.Message}");
-            ExtensionService.CloseExtension();
-        }
-    }
-
-    private void OpenExtensionWindow(Type componentType, Dictionary<string, object> parameters)
-    {
-        var window = new Window
-        {
-            Title = componentType.Name,
-            Page = new ContentPage
-            {
-                Content = new BlazorWebView
-                {
-                    HostPage = "wwwroot/index.html",
-                    RootComponents =
-                {
-                    new RootComponent
-                    {
-                        Selector = "#app",
-                        ComponentType = componentType,
-                        Parameters = parameters
-                    }
-                }
-                }
-            }
-        };
-
-        Application.Current?.OpenWindow(window);
-    }
 
     IEnumerable<ExtensionInfo> SearchExtensions()
     {

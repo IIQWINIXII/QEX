@@ -30,7 +30,7 @@ namespace QEX
             builder.Services.AddSingleton<DynamicServiceProvider>();
             builder.Services.AddSingleton<IDynamicServiceRegistry>(sp => sp.GetRequiredService<DynamicServiceProvider>());
             builder.Services.AddSingleton<IPluginServiceProvider>(sp => sp.GetRequiredService<DynamicServiceProvider>());
-
+            
 #if DEBUG
             builder.Services.AddBlazorWebViewDeveloperTools();
             builder.Logging.AddDebug();
@@ -55,10 +55,35 @@ namespace QEX
 
             var extensionService = mauiProvider.GetRequiredService<IExtensionService>();
             var loader = new ExtensionLoader(extensionService, dynamicProvider);
-
+            var ExtensionService = app.Services.GetRequiredService<IExtensionService>();
+            ExtensionService.OnOpenExtensionInNewWindow += OpenExtensionWindow;
             return app;
         }
+        private static void OpenExtensionWindow(Type componentType, Dictionary<string, object> parameters)
+        {
+            var window = new Window
+            {
+                Title = componentType.Name,
+                Page = new ContentPage
+                {
+                    Content = new BlazorWebView
+                    {
+                        HostPage = "wwwroot/index.html",
+                        RootComponents =
+                {
+                    new RootComponent
+                    {
+                        Selector = "#app",
+                        ComponentType = componentType,
+                        Parameters = parameters
+                    }
+                }
+                    }
+                }
+            };
 
+            Application.Current?.OpenWindow(window);
+        }
 
     }
 }

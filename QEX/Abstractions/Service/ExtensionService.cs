@@ -8,7 +8,6 @@ namespace QEX.Abstractions.Service
     public class ExtensionService : IExtensionService
     {
         private readonly Dictionary<string, Type> _extensions = new();
-
         public Type? CurrentComponentType { get; private set; }
         public Dictionary<string, object>? CurrentParameters { get; private set; }
         public bool IsVisible { get; private set; }

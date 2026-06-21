@@ -11,13 +11,13 @@ namespace QEX.Abstractions.Interface
         bool IsVisible { get; }
 
         event Action<Type, Dictionary<string, object>> OnOpenExtension;
+        event Action<Type, Dictionary<string, object>> OnOpenExtensionInNewWindow;
         event Action OnCloseExtension;
 
         void OpenExtension<TComponent>(Dictionary<string, object>? parameters = null)
             where TComponent : ComponentBase;
 
         void OpenExtension(Type componentType, Dictionary<string, object>? parameters = null);
-        public event Action<Type, Dictionary<string, object>>? OnOpenExtensionInNewWindow;
         void OpenExtensionByName(string name, Dictionary<string, object>? parameters = null);
         public void OpenExtensionWindowByName(string name, Dictionary<string, object>? parameters = null);
         void OpenExtensionWindow(Type componentType, Dictionary<string, object>? parameters = null);
