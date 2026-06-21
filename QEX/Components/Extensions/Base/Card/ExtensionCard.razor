@@ -6,12 +6,14 @@
 <div class="store-card" @onclick="() => OpenExtension(ext?.Manifest?.Name ?? string.Empty)">
     <h4>@ext?.Manifest?.Name</h4>
     <p>@ext?.Manifest?.Description</p>
-    <button @onclick="() => OpenExtensionWindow(ext?.Manifest?.Name ?? string.Empty)" style="width: 15px; height: 15px">...</button>
+    <button class="button-new-win" @onclick="() => OpenExtensionWindow(ext?.Manifest?.Name ?? string.Empty)">...</button>
 </div>
+
+
 
 @code {
     [Parameter] public ExtensionInfo? ext { get; set; }
-
+    bool IsNewWinOpened = false;
     protected override void OnInitialized()
     {
         base.OnInitialized();
@@ -19,22 +21,29 @@
 
     void OpenExtension(string name)
     {
-        try
+        if (!IsNewWinOpened)
         {
-            ExtensionService.CloseExtension();
-            ExtensionService.OpenExtensionByName(name, new Dictionary<string, object>());
-            //ExtensionService.OpenExtensionWindowByName(name, new Dictionary<string, object>()); // открытие через новое окно
+            try
+            {
+                ExtensionService.CloseExtension();
+                ExtensionService.OpenExtensionByName(name, new Dictionary<string, object>());
+                //ExtensionService.OpenExtensionWindowByName(name, new Dictionary<string, object>()); // открытие через новое окно
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to open extension: {ex.Message}");
+                ExtensionService.CloseExtension();
+            }   
         }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Failed to open extension: {ex.Message}");
-            ExtensionService.CloseExtension();
-        }
+        else
+            IsNewWinOpened = false;
+        
     }
     void OpenExtensionWindow(string name)
     {
         try
         {
+            IsNewWinOpened = true;
             ExtensionService.OpenExtensionWindowByName(name, new Dictionary<string, object>());
         }
         catch
