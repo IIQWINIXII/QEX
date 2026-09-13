@@ -5,7 +5,6 @@
 
 <div class="draw-app">
     <div class="toolbar">
-        <span class="title">✏️ Рисование</span>
 
         <button @onclick="@(() => _showSettings = true)" title="Настройки холста">⚙️ Холст</button>
         <button @onclick="Save">💾 Сохранить PNG</button>
@@ -39,13 +38,6 @@
 </div>
 
 <style>
-    :global(html),
-    :global(body) {
-        margin: 0;
-        padding: 0;
-        height: 100%;
-        overflow: hidden;
-    }
 
     .draw-app {
         position: fixed;
@@ -120,7 +112,6 @@
     private string _tool = "pencil";
     private string _color = "#000000";
     private int _size = 3;
-
     private async Task OnSettingsApplied(CanvasSettings s)
     {
         _settings = s;

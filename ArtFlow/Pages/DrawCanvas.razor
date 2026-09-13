@@ -5,7 +5,7 @@
 @inject IJSRuntime JS
 
 <div class="canvas-stage">
-    <div class="canvas-scroll">
+    <div class="canvas-scroll" @ref="_scroll">
         <canvas @ref="_canvas"
                 id="drawCanvas"
                 width="@Settings.Width"
@@ -31,12 +31,13 @@
 
     .canvas-scroll {
         flex: 1 1 auto;
-        overflow: auto;
+        overflow: hidden; /* скролл отключён — колесо полностью на зум */
         padding: 16px;
         display: flex;
         justify-content: center;
-        align-items: flex-start;
+        align-items: center;
         box-sizing: border-box;
+        position: relative;
     }
 
     canvas {
@@ -44,8 +45,8 @@
         border: 1px solid #444;
         box-shadow: 0 2px 8px rgba(0,0,0,.25);
         cursor: crosshair;
-        image-rendering: pixelated;
         flex: 0 0 auto;
+        /* НЕ ставим width/height в inline — этим управляет JS */
     }
 </style>
 
@@ -56,13 +57,15 @@
     [Parameter] public EventCallback<(double X, double Y)> PointerMove { get; set; }
     [Parameter] public EventCallback PointerUp { get; set; }
 
-    /// <summary>Ссылка на модуль — родитель может вызвать init/clear/save.</summary>
+    [Parameter] public EventCallback SettingsChanged { get; set; }
+
     public IJSObjectReference? Module { get; private set; }
 
     private ElementReference _canvas;
+    private ElementReference _scroll;
     private bool _initialized;
+    private bool _wheelHooked;
 
-    // запоминаем последние применённые настройки, чтобы не дёргать resize зря
     private int _appliedWidth;
     private int _appliedHeight;
     private string _appliedBackground = "";
@@ -89,33 +92,43 @@
             {
                 Console.WriteLine($"[DrawCanvas] init failed: {ex}");
             }
-            return;
         }
 
-        // 2) Если настройки реально изменились — пересоздаём буфер
-        if (Module is null) return;
-
-        bool changed =
-            _appliedWidth != Settings.Width ||
-            _appliedHeight != Settings.Height ||
-            _appliedBackground != Settings.Background;
-
-        if (changed)
+        // 2) Навешиваем wheel-обработчик один раз
+        if (_initialized && Module is not null && !_wheelHooked)
         {
-            await Module.InvokeVoidAsync("resize",
-                Settings.Width, Settings.Height, Settings.Background);
+            try
+            {
+                await Module.InvokeVoidAsync("hookWheel", _scroll, _canvas);
+                _wheelHooked = true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[DrawCanvas] hookWheel failed: {ex}");
+            }
+        }
 
-            _appliedWidth = Settings.Width;
-            _appliedHeight = Settings.Height;
-            _appliedBackground = Settings.Background;
+        // 3) При смене размеров/фона — resize буфера и сброс зума к 100%
+        if (_initialized && Module is not null)
+        {
+            bool changed =
+                _appliedWidth != Settings.Width ||
+                _appliedHeight != Settings.Height ||
+                _appliedBackground != Settings.Background;
 
-            // сообщим родителю, чтобы он синхронизировал tool/color/size в свежий модуль
-            await SettingsChanged.InvokeAsync();
+            if (changed)
+            {
+                await Module.InvokeVoidAsync("resize",
+                    Settings.Width, Settings.Height, Settings.Background);
+
+                _appliedWidth = Settings.Width;
+                _appliedHeight = Settings.Height;
+                _appliedBackground = Settings.Background;
+
+                await SettingsChanged.InvokeAsync();
+            }
         }
     }
-
-    /// <summary>Сообщает родителю, что холст пересоздан (нужно вызвать sync).</summary>
-    [Parameter] public EventCallback SettingsChanged { get; set; }
 
     private async Task OnMouseDown(MouseEventArgs e) =>
         await PointerDown.InvokeAsync((e.ClientX, e.ClientY));
@@ -132,6 +145,7 @@
         {
             try
             {
+                await Module.InvokeVoidAsync("unhookWheel");
                 await Module.InvokeVoidAsync("dispose");
                 await Module.DisposeAsync();
             }
