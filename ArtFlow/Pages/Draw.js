@@ -19,7 +19,19 @@ export function sync(t, c, s) {
     size = s;
 }
 
-export function start(x, y) {
+// Преобразование координат окна -> координаты буфера канваса
+function toCanvas(clientX, clientY) {
+    const rect = ctx.canvas.getBoundingClientRect();
+    const scaleX = ctx.canvas.width / rect.width;
+    const scaleY = ctx.canvas.height / rect.height;
+    return {
+        x: (clientX - rect.left) * scaleX,
+        y: (clientY - rect.top) * scaleY
+    };
+}
+
+export function start(clientX, clientY) {
+    const { x, y } = toCanvas(clientX, clientY);
     isDrawing = true;
     startX = x;
     startY = y;
@@ -28,8 +40,9 @@ export function start(x, y) {
     ctx.moveTo(x, y);
 }
 
-export function move(x, y) {
+export function move(clientX, clientY) {
     if (!isDrawing) return;
+    const { x, y } = toCanvas(clientX, clientY);
     ctx.putImageData(savedData, 0, 0);
     ctx.strokeStyle = color;
     ctx.lineWidth = size;

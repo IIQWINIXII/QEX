@@ -147,13 +147,12 @@
     private async Task OnMouseDown(MouseEventArgs e)
     {
         if (_module is null) return;
-        await _module.InvokeVoidAsync("start", e.OffsetX, e.OffsetY);
+        await _module.InvokeVoidAsync("start", e.ClientX, e.ClientY);
     }
-
     private async Task OnMouseMove(MouseEventArgs e)
     {
         if (_module is null) return;
-        await _module.InvokeVoidAsync("move", e.OffsetX, e.OffsetY);
+        await _module.InvokeVoidAsync("move", e.ClientX, e.ClientY);
     }
 
     private async Task OnMouseUp(MouseEventArgs e)
