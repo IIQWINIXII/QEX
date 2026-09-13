@@ -6,11 +6,43 @@ let savedData = null;
 let tool = 'pencil';
 let color = '#000000';
 let size = 3;
+let background = '#FFFFFF';
 
-export function init(canvas) {
+/**
+ * Инициализация модуля.
+ * @param {HTMLCanvasElement} canvas
+ * @param {string} [bg] — цвет фона ('#FFFFFF', '#000000' или 'transparent')
+ */
+export function init(canvas, bg) {
+    if (!canvas) return;
     ctx = canvas.getContext('2d');
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
+    if (typeof bg === 'string') background = bg;
+    fillBackground();
+}
+
+/**
+ * Пересоздаёт буфер холста под новый размер (содержимое сбрасывается).
+ * Вызывается из Blazor при применении настроек холста.
+ */
+export function resize(w, h, bg) {
+    if (!ctx) return;
+    ctx.canvas.width = w;
+    ctx.canvas.height = h;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    if (typeof bg === 'string') background = bg;
+    fillBackground();
+}
+
+function fillBackground() {
+    if (!ctx) return;
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    if (background && background !== 'transparent') {
+        ctx.fillStyle = background;
+        ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    }
 }
 
 export function sync(t, c, s) {
@@ -31,6 +63,7 @@ function toCanvas(clientX, clientY) {
 }
 
 export function start(clientX, clientY) {
+    if (!ctx) return;
     const { x, y } = toCanvas(clientX, clientY);
     isDrawing = true;
     startX = x;
@@ -41,7 +74,7 @@ export function start(clientX, clientY) {
 }
 
 export function move(clientX, clientY) {
-    if (!isDrawing) return;
+    if (!isDrawing || !ctx) return;
     const { x, y } = toCanvas(clientX, clientY);
     ctx.putImageData(savedData, 0, 0);
     ctx.strokeStyle = color;
@@ -70,9 +103,26 @@ export function end() {
     savedData = null;
 }
 
+/**
+ * Очистка холста. Если фон задан — перекрашивает его, иначе полностью прозрачный.
+ */
 export function clear() {
+    if (!ctx) return;
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    if (background && background !== 'transparent') {
+        ctx.fillStyle = background;
+        ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    }
 }
+
+/**
+ * Возвращает PNG data URL текущего холста — используется для сохранения файла.
+ */
+export function toDataUrl() {
+    if (!ctx) return '';
+    return ctx.canvas.toDataURL('image/png');
+}
+
 export function dispose() {
     ctx = null;
     isDrawing = false;
