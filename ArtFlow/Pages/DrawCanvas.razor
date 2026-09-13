@@ -22,7 +22,7 @@
         min-width: 0;
         min-height: 0;
         background: #d0d0d0;
-        position: relative; /* якорь для абсолютного canvas */
+        position: relative;
         overflow: hidden;
         cursor: crosshair;
     }
@@ -35,10 +35,9 @@
         border: 1px solid #444;
         box-shadow: 0 2px 8px rgba(0,0,0,.25);
         cursor: crosshair;
-        /* width/height и transform задаёт JS */
         transform-origin: 0 0;
         will-change: transform;
-        image-rendering: pixelated; /* можно убрать, если нужна гладкость */
+        image-rendering: pixelated;
     }
 </style>
 
@@ -48,7 +47,6 @@
     [Parameter] public EventCallback<(double X, double Y)> PointerDown { get; set; }
     [Parameter] public EventCallback<(double X, double Y)> PointerMove { get; set; }
     [Parameter] public EventCallback PointerUp { get; set; }
-
     [Parameter] public EventCallback SettingsChanged { get; set; }
 
     public IJSObjectReference? Module { get; private set; }

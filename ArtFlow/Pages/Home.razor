@@ -5,7 +5,6 @@
 
 <div class="draw-app">
     <div class="toolbar">
-
         <button @onclick="@(() => _showSettings = true)" title="Настройки холста">⚙️ Холст</button>
         <button @onclick="Save">💾 Сохранить PNG</button>
         <button @onclick="Clear">🗑 Очистить</button>
@@ -25,19 +24,27 @@
                     PointerUp="OnPointerUp"
                     SettingsChanged="SyncSettings" />
 
-        <ColorPanel Selected="@_color"
-                    SelectedChanged="OnColorChanged"
-                    Size="@_size"
-                    SizeChanged="OnSizeChanged" />
+        <div class="right-dock">
+            <div class="color-wrap">
+                <ColorPanel Selected="@_color"
+                            SelectedChanged="OnColorChanged"
+                            Size="@_size"
+                            SizeChanged="OnSizeChanged" />
+            </div>
+            <div class="layers-wrap">
+                <LayersPanel Layers="_layers"
+                             ActiveId="_activeLayerId"
+                             ActionRequested="OnLayerAction" />
+            </div>
+        </div>
     </div>
 
     <CanvasOptionDialog @bind-Visible="_showSettings"
-                      Settings="_settings"
-                      Applied="OnSettingsApplied" />
+                        Settings="_settings"
+                        Applied="OnSettingsApplied" />
 </div>
 
 <style>
-
     .draw-app {
         position: fixed;
         inset: 0;
@@ -58,13 +65,6 @@
         border-bottom: 1px solid #ddd;
     }
 
-        .toolbar .title {
-            font-weight: 600;
-            font-size: 14px;
-            color: #333;
-            margin-right: 8px;
-        }
-
         .toolbar .hint {
             font-size: 12px;
             color: #666;
@@ -81,24 +81,40 @@
             transition: background .15s;
         }
 
-            .toolbar button:hover { background: #e9ecef; }
-
-    .btn-close {
-        background: #dc3545 !important;
-        color: white !important;
-        border-color: #dc3545 !important;
-    }
+            .toolbar button:hover {
+                background: #e9ecef;
+            }
 
 
     .workspace {
         flex: 1 1 auto;
         min-height: 0;
         display: grid;
-        grid-template-columns: 56px 1fr 56px;
+        grid-template-columns: 56px 1fr 220px; /* инструменты | холст | правая панель */
         align-items: stretch;
         background: #e9ecef;
         overflow: hidden;
     }
+
+    .right-dock {
+        display: flex;
+        flex-direction: column;
+        background: #f5f5f5;
+        border-left: 1px solid #ddd;
+        min-height: 0;
+        overflow: hidden;
+    }
+
+        .right-dock .color-wrap {
+            flex: 0 0 auto;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .right-dock .layers-wrap {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow: hidden;
+        }
 </style>
 
 @code {
@@ -106,16 +122,47 @@
 
     private DrawCanvas? _canvasRef;
     private CanvasSettings _settings = new();
-    private bool _showSettings = true; // при первом открытии показываем диалог
+    private bool _showSettings = true;
     private string _tool = "pencil";
     private string _color = "#000000";
     private int _size = 3;
+
+    private List<LayerInfo> _layers = new();
+    private string? _activeLayerId;
+
+    protected override void OnInitialized()
+    {
+        var first = new LayerInfo { Name = "Слой 1" };
+        _layers.Add(first);
+        _activeLayerId = first.Id;
+    }
+
+    // ---------- Настройки холста ----------
+
     private async Task OnSettingsApplied(CanvasSettings s)
     {
         _settings = s;
         StateHasChanged();
 
+        if (_canvasRef?.Module is not null)
+        {
+            // resize сбросит буферы слоёв внутри JS
+            await _canvasRef.Module.InvokeVoidAsync("resize", s.Width, s.Height, s.Background);
+            await SyncLayersAfterResize();
+            await SyncSettings();
+        }
     }
+
+    /// <summary>После resize нужно пересоздать слои в JS согласно списку.</summary>
+    private async Task SyncLayersAfterResize()
+    {
+        if (_canvasRef?.Module is null) return;
+        var ids = _layers.Select(l => l.Id).ToArray();
+        await _canvasRef.Module.InvokeVoidAsync("reinitLayers", ids, _activeLayerId);
+        await SyncLayerProps();
+    }
+
+    // ---------- Инструмент/цвет/размер ----------
 
     private async Task SyncSettings()
     {
@@ -144,6 +191,8 @@
         await SyncSettings();
     }
 
+    // ---------- Мышь ----------
+
     private async Task OnPointerDown((double X, double Y) p)
     {
         if (_canvasRef?.Module is null) return;
@@ -171,12 +220,154 @@
     private async Task Save()
     {
         if (_canvasRef?.Module is null) return;
-        // Возвращаем dataURL и инициируем скачивание в JS
         var dataUrl = await _canvasRef.Module.InvokeAsync<string>("toDataUrl");
         await JS.InvokeVoidAsync("eval",
-            $"const a=document.createElement('a');a.href={System.Text.Json.JsonSerializer.Serialize(dataUrl)};a.download='art.png';a.click();");
+            $"const a=document.createElement('a');" +
+            $"a.href={System.Text.Json.JsonSerializer.Serialize(dataUrl)};" +
+            $"a.download='art.png';a.click();");
     }
 
-    private async Task HandleClose() => await OnClose.InvokeAsync();
 
+    // ---------- Слои ----------
+
+    private int ActiveLayerIndex =>
+        _activeLayerId is null ? -1 : _layers.FindIndex(l => l.Id == _activeLayerId);
+
+    private async Task OnLayerAction(LayerAction a)
+    {
+        switch (a.Kind)
+        {
+            case LayerActionKind.Select:
+                _activeLayerId = a.Id;
+                if (_canvasRef?.Module is not null)
+                    await _canvasRef.Module.InvokeVoidAsync("setActiveLayer", a.Id);
+                break;
+
+            case LayerActionKind.Add:
+                {
+                    var l = new LayerInfo { Name = $"Слой {_layers.Count + 1}" };
+                    _layers.Add(l);
+                    _activeLayerId = l.Id;
+                    if (_canvasRef?.Module is not null)
+                        await _canvasRef.Module.InvokeVoidAsync("addLayer", l.Id);
+                    await SyncLayerProps();
+                    break;
+                }
+
+            case LayerActionKind.Duplicate:
+                {
+                    var i = ActiveLayerIndex;
+                    if (i < 0) break;
+                    var copy = _layers[i].Clone();
+                    _layers.Insert(i + 1, copy);
+                    _activeLayerId = copy.Id;
+                    if (_canvasRef?.Module is not null)
+                    {
+                        await _canvasRef.Module.InvokeVoidAsync(
+                            "duplicateLayer", _layers[i].Id, copy.Id);
+                        await _canvasRef.Module.InvokeVoidAsync("setActiveLayer", copy.Id);
+                    }
+                    await SyncLayerOrder();
+                    await SyncLayerProps();
+                    break;
+                }
+
+            case LayerActionKind.Delete:
+                {
+                    if (_layers.Count <= 1) break;
+                    var i = ActiveLayerIndex;
+                    if (i < 0) break;
+                    var id = _layers[i].Id;
+                    _layers.RemoveAt(i);
+                    var newIndex = Math.Max(0, i - 1);
+                    _activeLayerId = _layers[newIndex].Id;
+                    if (_canvasRef?.Module is not null)
+                    {
+                        await _canvasRef.Module.InvokeVoidAsync("deleteLayer", id);
+                        await _canvasRef.Module.InvokeVoidAsync("setActiveLayer", _activeLayerId);
+                    }
+                    await SyncLayerOrder();
+                    await SyncLayerProps();
+                    break;
+                }
+
+            case LayerActionKind.MoveUp:
+                {
+                    var i = ActiveLayerIndex;
+                    if (i < 0 || i >= _layers.Count - 1) break;
+                    (_layers[i], _layers[i + 1]) = (_layers[i + 1], _layers[i]);
+                    await SyncLayerOrder();
+                    break;
+                }
+
+            case LayerActionKind.MoveDown:
+                {
+                    var i = ActiveLayerIndex;
+                    if (i <= 0) break;
+                    (_layers[i], _layers[i - 1]) = (_layers[i - 1], _layers[i]);
+                    await SyncLayerOrder();
+                    break;
+                }
+
+            case LayerActionKind.ToggleVisible:
+                {
+                    if (a.Index is int idx && idx >= 0 && idx < _layers.Count && a.Visible is bool v)
+                    {
+                        _layers[idx].Visible = v;
+                        if (_canvasRef?.Module is not null)
+                            await _canvasRef.Module.InvokeVoidAsync(
+                                "setLayerVisible", _layers[idx].Id, v);
+                    }
+                    break;
+                }
+
+            case LayerActionKind.SetBlend:
+                {
+                    var i = ActiveLayerIndex;
+                    if (i >= 0 && a.BlendMode is not null)
+                    {
+                        _layers[i].BlendMode = a.BlendMode;
+                        await SyncLayerProps();
+                    }
+                    break;
+                }
+
+            case LayerActionKind.SetOpacity:
+                {
+                    var i = ActiveLayerIndex;
+                    if (i >= 0 && a.Opacity is double op)
+                    {
+                        _layers[i].Opacity = op;
+                        await SyncLayerProps();
+                    }
+                    break;
+                }
+
+            case LayerActionKind.Rename:
+                {
+                    var l = _layers.FirstOrDefault(x => x.Id == a.Id);
+                    if (l is not null && !string.IsNullOrWhiteSpace(a.Name))
+                        l.Name = a.Name!;
+                    break;
+                }
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task SyncLayerOrder()
+    {
+        if (_canvasRef?.Module is null) return;
+        var ids = _layers.Select(l => l.Id).ToArray();
+        await _canvasRef.Module.InvokeVoidAsync("setLayerOrder", ids);
+    }
+
+    private async Task SyncLayerProps()
+    {
+        var i = ActiveLayerIndex;
+        if (i < 0 || _canvasRef?.Module is null) return;
+        var a = _layers[i];
+        await _canvasRef.Module.InvokeVoidAsync(
+            "setActiveLayerProps", a.Opacity, a.BlendMode);
+    }
 }

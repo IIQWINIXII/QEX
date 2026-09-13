@@ -1,0 +1,265 @@
+﻿@* Components/LayersPanel.razor *@
+@using ArtFlow.Classes
+
+<div class="layers-panel">
+    <div class="header">
+        <span>Слои</span>
+        <div class="header-actions">
+            <button title="Добавить слой" @onclick="AddLayer">＋</button>
+            <button title="Дублировать" @onclick="DuplicateLayer">⧉</button>
+            <button title="Вверх" @onclick="MoveUp">▲</button>
+            <button title="Вниз" @onclick="MoveDown">▼</button>
+            <button title="Удалить" @onclick="DeleteLayer" class="danger">🗑</button>
+        </div>
+    </div>
+
+    <div class="list">
+        @* Список рисуем сверху вниз, а в Canvas порядок снизу вверх,
+           поэтому идём по индексам в обратном порядке. *@
+        @for (int i = Layers.Count - 1; i >= 0; i--)
+        {
+            var idx = i;
+            var layer = Layers[idx];
+            <div class="layer @(layer.Id == ActiveId ? "active" : "")"
+                 @onclick="@(() => Select(layer.Id))"
+                 @ondblclick="@(() => StartRename(layer))">
+                <input type="checkbox" checked="@layer.Visible"
+                       @onchange="@(e => ToggleVisible(idx, e))"
+                       @onclick:stopPropagation="true" />
+
+                @if (_renamingId == layer.Id)
+                {
+                    <input class="rename-input"
+                           value="@_renameValue"
+                           @oninput='e => _renameValue = e.Value?.ToString() ?? "" '
+                           @onblur="CommitRename"
+                           @onkeydown="OnRenameKey"
+                           @ref="_renameInput"
+                           @onclick:stopPropagation="true" />
+                }
+                else
+                {
+                    <span class="name">@layer.Name</span>
+                }
+            </div>
+        }
+    </div>
+
+    @if (ActiveLayer is not null)
+    {
+        <div class="props">
+            <label class="row">
+                <span>Режим:</span>
+                <select value="@ActiveLayer.BlendMode" @onchange="OnBlendChanged">
+                    @foreach (var b in BlendModes.All)
+                    {
+                        <option value="@b">@b</option>
+                    }
+                </select>
+            </label>
+
+            <label class="row">
+                <span>Непрозр.:</span>
+                <input type="range" min="0" max="100"
+                       value="@((int)Math.Round(ActiveLayer.Opacity * 100))"
+                       @oninput="OnOpacityInput" />
+                <span class="val">@((int)Math.Round(ActiveLayer.Opacity * 100))%</span>
+            </label>
+        </div>
+    }
+</div>
+
+<style>
+    .layers-panel {
+        display: flex;
+        flex-direction: column;
+        background: #f5f5f5;
+        width: 100%;
+        height: 100%;
+        font-family: system-ui, sans-serif;
+        font-size: 12px;
+        box-sizing: border-box;
+        overflow: hidden;
+    }
+
+    .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 6px 8px;
+        background: #ececec;
+        border-bottom: 1px solid #ddd;
+        font-weight: 600;
+    }
+
+    .header-actions {
+        display: flex;
+        gap: 2px;
+    }
+
+        .header-actions button {
+            width: 24px;
+            height: 22px;
+            padding: 0;
+            border: 1px solid #ccc;
+            background: #fff;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+            line-height: 1;
+        }
+
+            .header-actions button:hover { background: #e9ecef; }
+            .header-actions button.danger { color: #b00020; }
+
+    .list {
+        flex: 1 1 auto;
+        overflow-y: auto;
+        padding: 4px;
+    }
+
+    .layer {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 6px;
+        border-radius: 4px;
+        cursor: pointer;
+        user-select: none;
+    }
+
+        .layer:hover { background: #e9ecef; }
+        .layer.active { background: #cfe6ff; outline: 1px solid #0078d7; }
+
+    .name {
+        flex: 1 1 auto;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .rename-input {
+        flex: 1 1 auto;
+        font-size: 12px;
+        padding: 1px 4px;
+        border: 1px solid #0078d7;
+        border-radius: 3px;
+        outline: none;
+    }
+
+    .props {
+        border-top: 1px solid #ddd;
+        padding: 6px 8px;
+        background: #fafafa;
+    }
+
+    .row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 6px;
+    }
+
+        .row span:first-child {
+            width: 60px;
+            color: #555;
+        }
+
+        .row select,
+        .row input[type=range] {
+            flex: 1 1 auto;
+        }
+
+    .val {
+        width: 34px;
+        text-align: right;
+        color: #333;
+    }
+</style>
+
+@code {
+    /// <summary>Список слоёв снизу вверх (индекс 0 — самый нижний).</summary>
+    [Parameter, EditorRequired] public List<LayerInfo> Layers { get; set; } = new();
+
+    /// <summary>Id активного слоя.</summary>
+    [Parameter] public string? ActiveId { get; set; }
+
+    /// <summary>Все действия уходят наружу одним колбэком.</summary>
+    [Parameter] public EventCallback<LayerAction> ActionRequested { get; set; }
+
+    private LayerInfo? ActiveLayer =>
+        ActiveId is null ? null : Layers.FirstOrDefault(l => l.Id == ActiveId);
+
+    // --- переименование ---
+    private string? _renamingId;
+    private string _renameValue = "";
+    private ElementReference _renameInput;
+
+    private async Task Select(string id) =>
+        await ActionRequested.InvokeAsync(new LayerAction(LayerActionKind.Select, Id: id));
+
+    private async Task AddLayer() =>
+        await ActionRequested.InvokeAsync(new LayerAction(LayerActionKind.Add));
+
+    private async Task DuplicateLayer() =>
+        await ActionRequested.InvokeAsync(new LayerAction(LayerActionKind.Duplicate));
+
+    private async Task DeleteLayer() =>
+        await ActionRequested.InvokeAsync(new LayerAction(LayerActionKind.Delete));
+
+    private async Task MoveUp() =>
+        await ActionRequested.InvokeAsync(new LayerAction(LayerActionKind.MoveUp));
+
+    private async Task MoveDown() =>
+        await ActionRequested.InvokeAsync(new LayerAction(LayerActionKind.MoveDown));
+
+    private async Task ToggleVisible(int index, ChangeEventArgs e)
+    {
+        var visible = e.Value is bool b && b;
+        await ActionRequested.InvokeAsync(new LayerAction(
+            LayerActionKind.ToggleVisible, Index: index, Visible: visible));
+    }
+
+    private async Task OnBlendChanged(ChangeEventArgs e)
+    {
+        var mode = e.Value?.ToString() ?? "source-over";
+        await ActionRequested.InvokeAsync(new LayerAction(
+            LayerActionKind.SetBlend, BlendMode: mode));
+    }
+
+    private async Task OnOpacityInput(ChangeEventArgs e)
+    {
+        if (double.TryParse(e.Value?.ToString(),
+                System.Globalization.NumberStyles.Any,
+                System.Globalization.CultureInfo.InvariantCulture, out var v))
+        {
+            await ActionRequested.InvokeAsync(new LayerAction(
+                LayerActionKind.SetOpacity, Opacity: v / 100.0));
+        }
+    }
+
+    // --- inline rename ---
+    private async Task StartRename(LayerInfo layer)
+    {
+        _renamingId = layer.Id;
+        _renameValue = layer.Name;
+        StateHasChanged();
+        try { await _renameInput.FocusAsync(); } catch { }
+    }
+
+    private async Task CommitRename()
+    {
+        if (_renamingId is null) return;
+        var id = _renamingId;
+        var name = string.IsNullOrWhiteSpace(_renameValue) ? "Слой" : _renameValue.Trim();
+        _renamingId = null;
+        await ActionRequested.InvokeAsync(new LayerAction(
+            LayerActionKind.Rename, Id: id, Name: name));
+    }
+
+    private async Task OnRenameKey(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") await CommitRename();
+        else if (e.Key == "Escape") { _renamingId = null; StateHasChanged(); }
+    }
+}
