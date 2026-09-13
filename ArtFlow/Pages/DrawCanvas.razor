@@ -4,19 +4,16 @@
 @implements IAsyncDisposable
 @inject IJSRuntime JS
 
-<div class="canvas-stage">
-    <div class="canvas-scroll" @ref="_scroll">
-        <canvas @ref="_canvas"
-                id="drawCanvas"
-                width="@Settings.Width"
-                height="@Settings.Height"
-                style="background:@Settings.Background;"
-                @onmousedown="OnMouseDown"
-                @onmousemove="OnMouseMove"
-                @onmouseup="OnMouseUp"
-                @onmouseleave="OnMouseLeave">
-        </canvas>
-    </div>
+<div class="canvas-stage" @ref="_stage">
+    <canvas @ref="_canvas"
+            id="drawCanvas"
+            width="@Settings.Width"
+            height="@Settings.Height"
+            @onmousedown="OnMouseDown"
+            @onmousemove="OnMouseMove"
+            @onmouseup="OnMouseUp"
+            @onmouseleave="OnMouseLeave">
+    </canvas>
 </div>
 
 <style>
@@ -25,28 +22,23 @@
         min-width: 0;
         min-height: 0;
         background: #d0d0d0;
-        display: flex;
+        position: relative; /* якорь для абсолютного canvas */
         overflow: hidden;
-    }
-
-    .canvas-scroll {
-        flex: 1 1 auto;
-        overflow: hidden; /* скролл отключён — колесо полностью на зум */
-        padding: 16px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        box-sizing: border-box;
-        position: relative;
+        cursor: crosshair;
     }
 
     canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
         display: block;
         border: 1px solid #444;
         box-shadow: 0 2px 8px rgba(0,0,0,.25);
         cursor: crosshair;
-        flex: 0 0 auto;
-        /* НЕ ставим width/height в inline — этим управляет JS */
+        /* width/height и transform задаёт JS */
+        transform-origin: 0 0;
+        will-change: transform;
+        image-rendering: pixelated; /* можно убрать, если нужна гладкость */
     }
 </style>
 
@@ -62,7 +54,7 @@
     public IJSObjectReference? Module { get; private set; }
 
     private ElementReference _canvas;
-    private ElementReference _scroll;
+    private ElementReference _stage;
     private bool _initialized;
     private bool _wheelHooked;
 
@@ -74,14 +66,13 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        // 1) Однократная инициализация JS-модуля
         if (!_initialized)
         {
             try
             {
                 var asm = typeof(Home).Assembly;
                 Module = await JsModuleLoader.LoadAsync(JS, asm, "Draw.js");
-                await Module.InvokeVoidAsync("init", _canvas, Settings.Background);
+                await Module.InvokeVoidAsync("init", _canvas, _stage, Settings.Background);
 
                 _appliedWidth = Settings.Width;
                 _appliedHeight = Settings.Height;
@@ -94,12 +85,11 @@
             }
         }
 
-        // 2) Навешиваем wheel-обработчик один раз
         if (_initialized && Module is not null && !_wheelHooked)
         {
             try
             {
-                await Module.InvokeVoidAsync("hookWheel", _scroll, _canvas);
+                await Module.InvokeVoidAsync("hookWheel", _stage);
                 _wheelHooked = true;
             }
             catch (Exception ex)
@@ -108,7 +98,6 @@
             }
         }
 
-        // 3) При смене размеров/фона — resize буфера и сброс зума к 100%
         if (_initialized && Module is not null)
         {
             bool changed =

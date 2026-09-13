@@ -1,7 +1,7 @@
 // Pages/Draw.js
 let ctx = null;
 let canvasEl = null;
-let scrollEl = null;
+let stageEl = null;
 
 let isDrawing = false;
 let startX = 0, startY = 0;
@@ -11,31 +11,33 @@ let color = '#000000';
 let size = 3;
 let background = '#FFFFFF';
 
-// --- Зум ---
+// --- Зум и панорама (transform: translate + scale) ---
 let zoom = 1.0;
-const ZOOM_MIN = 0.1;
-const ZOOM_MAX = 8.0;
-const ZOOM_STEP = 0.1;
+let panX = 0;   // смещение канваса в пикселях stage
+let panY = 0;
+const ZOOM_MIN = 0.05;
+const ZOOM_MAX = 16.0;
+const ZOOM_FACTOR = 1.12;   // множитель на один "щелчок" колеса
 
 /* ============================================================
  *  Инициализация
  * ============================================================ */
 
-export function init(canvas, bg) {
-    if (!canvas) return;
+export function init(canvas, stage, bg) {
+    if (!canvas || !stage) return;
     canvasEl = canvas;
+    stageEl = stage;
     ctx = canvas.getContext('2d');
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     if (typeof bg === 'string') background = bg;
 
     fillBackground();
-    applyZoom(); // на случай, если зум уже не 1
+
+    // Центрируем канвас в stage при старте
+    centerCanvas();
 }
 
-/**
- * Пересоздаёт буфер холста под новый размер. Сбрасывает зум к 100%.
- */
 export function resize(w, h, bg) {
     if (!ctx) return;
     ctx.canvas.width = w;
@@ -45,8 +47,29 @@ export function resize(w, h, bg) {
     if (typeof bg === 'string') background = bg;
 
     zoom = 1.0;
-    applyZoom();
+    centerCanvas();
     fillBackground();
+}
+
+function centerCanvas() {
+    if (!canvasEl || !stageEl) return;
+    const sw = stageEl.clientWidth;
+    const sh = stageEl.clientHeight;
+    const cw = canvasEl.width;
+    const ch = canvasEl.height;
+    panX = Math.round((sw - cw) / 2);
+    panY = Math.round((sh - ch) / 2);
+    applyTransform();
+}
+
+function applyTransform() {
+    if (!canvasEl) return;
+    // transform-origin: 0 0 — обязательно (задан в CSS)
+    canvasEl.style.transform =
+        `translate(${panX}px, ${panY}px) scale(${zoom})`;
+    // CSS-размер оставляем равным буферу — transform сам всё масштабирует
+    canvasEl.style.width = canvasEl.width + 'px';
+    canvasEl.style.height = canvasEl.height + 'px';
 }
 
 function fillBackground() {
@@ -65,107 +88,65 @@ export function sync(t, c, s) {
 }
 
 /* ============================================================
- *  Зум колесом (без перерисовки Blazor)
+ *  Зум колесом — относительно курсора
  * ============================================================ */
 
 let wheelHandler = null;
 
-export function hookWheel(scrollContainer, canvas) {
-    if (!scrollContainer || !canvas) return;
-    scrollEl = scrollContainer;
-    canvasEl = canvas;
+export function hookWheel(stage) {
+    if (!stage) return;
+    stageEl = stage;
 
     if (wheelHandler) return;
 
     wheelHandler = function (e) {
-        e.preventDefault(); // отключаем скролл
+        e.preventDefault();
 
-        const rect = canvasEl.getBoundingClientRect();
-        // позиция курсора ОТНОСИТЕЛЬНО канваса (в его текущих экранных px)
-        const cx = e.clientX - rect.left;
-        const cy = e.clientY - rect.top;
+        // Позиция курсора ОТНОСИТЕЛЬНО stage
+        const stageRect = stageEl.getBoundingClientRect();
+        const mx = e.clientX - stageRect.left;
+        const my = e.clientY - stageRect.top;
 
-        // "якорь" в координатах буфера, который должен остаться под курсором
-        const anchorX = cx / zoom;
-        const anchorY = cy / zoom;
+        // Точка в системе координат канваса (в буферных px) под курсором
+        // screen = pan + buf * zoom  →  buf = (mouse - pan) / zoom
+        const bufX = (mx - panX) / zoom;
+        const bufY = (my - panY) / zoom;
 
-        const dir = e.deltaY < 0 ? 1 : -1;
-        const newZoom = clamp(zoom + dir * ZOOM_STEP, ZOOM_MIN, ZOOM_MAX);
-        if (newZoom === zoom) return;
-
+        // Меняем зум
+        const factor = e.deltaY < 0 ? ZOOM_FACTOR : 1 / ZOOM_FACTOR;
+        const newZoom = clamp(zoom * factor, ZOOM_MIN, ZOOM_MAX);
+        if (Math.abs(newZoom - zoom) < 1e-6) return;
         zoom = newZoom;
 
-        // применяем размеры и сдвигаем скролл, чтобы курсор остался на месте
-        applyZoomAndKeepAnchor(anchorX, anchorY, e.clientX, e.clientY);
+        // Так двигаем pan, чтобы точка bufX/bufY оказалась под курсором:
+        // mouse = pan + buf * zoom  →  pan = mouse - buf * zoom
+        panX = mx - bufX * zoom;
+        panY = my - bufY * zoom;
+
+        applyTransform();
     };
 
-    scrollEl.addEventListener('wheel', wheelHandler, { passive: false });
+    stageEl.addEventListener('wheel', wheelHandler, { passive: false });
 }
 
 export function unhookWheel() {
-    if (scrollEl && wheelHandler) {
-        scrollEl.removeEventListener('wheel', wheelHandler, { passive: false });
+    if (stageEl && wheelHandler) {
+        stageEl.removeEventListener('wheel', wheelHandler, { passive: false });
     }
-    scrollEl = null;
     wheelHandler = null;
-}
-
-function applyZoom() {
-    if (!canvasEl) return;
-    canvasEl.style.width = (canvasEl.width * zoom) + 'px';
-    canvasEl.style.height = (canvasEl.height * zoom) + 'px';
-}
-
-/**
- * Применяет зум и корректирует scrollLeft/scrollTop так,
- * чтобы точка (anchorX, anchorY) в буфере осталась под курсором.
- */
-function applyZoomAndKeepAnchor(anchorX, anchorY, clientX, clientY) {
-    if (!canvasEl || !scrollEl) return;
-
-    // Координаты курсора относительно контейнера скролла (включая padding)
-    const scrollRect = scrollEl.getBoundingClientRect();
-    const cursorInScrollX = clientX - scrollRect.left + scrollEl.scrollLeft;
-    const cursorInScrollY = clientY - scrollRect.top + scrollEl.scrollTop;
-
-    // Запоминаем положение курсора в контейнере до зума
-    const beforeX = clientX - scrollRect.left;
-    const beforeY = clientY - scrollRect.top;
-
-    // Применяем новый размер
-    applyZoom();
-
-    // После зума новая позиция "якоря" относительно начала канваса (в экранных px)
-    const canvasRect = canvasEl.getBoundingClientRect();
-    const newCanvasInScrollX = canvasRect.left - scrollRect.left + scrollEl.scrollLeft;
-    const newCanvasInScrollY = canvasRect.top - scrollRect.top + scrollEl.scrollTop;
-
-    // Куда должен попасть якорь в новой системе
-    const targetX = newCanvasInScrollX + anchorX * zoom;
-    const targetY = newCanvasInScrollY + anchorY * zoom;
-
-    // Сдвигаем скролл так, чтобы точка осталась под курсором
-    const dx = targetX - cursorInScrollX;
-    const dy = targetY - cursorInScrollY;
-
-    scrollEl.scrollLeft += dx;
-    scrollEl.scrollTop += dy;
-
-    // Небольшая подстройка, если у контейнера есть padding
-    // (обычно не требуется, но оставим комментарий на будущее)
-    void beforeX; void beforeY;
 }
 
 function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
 
 /* ============================================================
- *  Рисование
+ *  Рисование — используем getBoundingClientRect канваса,
+ *  т.к. он теперь имеет transform: translate+scale
  * ============================================================ */
 
 function toCanvas(clientX, clientY) {
-    const rect = ctx.canvas.getBoundingClientRect();
-    const scaleX = ctx.canvas.width / rect.width;
-    const scaleY = ctx.canvas.height / rect.height;
+    const rect = canvasEl.getBoundingClientRect();
+    const scaleX = canvasEl.width / rect.width;
+    const scaleY = canvasEl.height / rect.height;
     return {
         x: (clientX - rect.left) * scaleX,
         y: (clientY - rect.top) * scaleY
@@ -213,9 +194,6 @@ export function end() {
     savedData = null;
 }
 
-/**
- * Очистка холста. Если фон задан — перекрашивает его, иначе полностью прозрачный.
- */
 export function clear() {
     if (!ctx) return;
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
@@ -225,9 +203,6 @@ export function clear() {
     }
 }
 
-/**
- * Возвращает PNG data URL текущего холста — используется для сохранения файла.
- */
 export function toDataUrl() {
     if (!ctx) return '';
     return ctx.canvas.toDataURL('image/png');
@@ -236,9 +211,11 @@ export function toDataUrl() {
 export function dispose() {
     ctx = null;
     canvasEl = null;
-    scrollEl = null;
+    stageEl = null;
     isDrawing = false;
     savedData = null;
     zoom = 1.0;
+    panX = 0;
+    panY = 0;
     wheelHandler = null;
 }
