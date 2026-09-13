@@ -4,19 +4,16 @@
 @implements IAsyncDisposable
 @inject IJSRuntime JS
 
-<div class="canvas-stage">
-    <div class="canvas-scroll">
-        <canvas @ref="_canvas"
-                id="drawCanvas"
-                width="@Settings.Width"
-                height="@Settings.Height"
-                style="background:@Settings.Background;"
-                @onmousedown="OnMouseDown"
-                @onmousemove="OnMouseMove"
-                @onmouseup="OnMouseUp"
-                @onmouseleave="OnMouseLeave">
-        </canvas>
-    </div>
+<div class="canvas-stage" @ref="_stage">
+    <canvas @ref="_canvas"
+            id="drawCanvas"
+            width="@Settings.Width"
+            height="@Settings.Height"
+            @onmousedown="OnMouseDown"
+            @onmousemove="OnMouseMove"
+            @onmouseup="OnMouseUp"
+            @onmouseleave="OnMouseLeave">
+    </canvas>
 </div>
 
 <style>
@@ -25,27 +22,22 @@
         min-width: 0;
         min-height: 0;
         background: #d0d0d0;
-        display: flex;
+        position: relative;
         overflow: hidden;
-    }
-
-    .canvas-scroll {
-        flex: 1 1 auto;
-        overflow: auto;
-        padding: 16px;
-        display: flex;
-        justify-content: center;
-        align-items: flex-start;
-        box-sizing: border-box;
+        cursor: crosshair;
     }
 
     canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
         display: block;
         border: 1px solid #444;
         box-shadow: 0 2px 8px rgba(0,0,0,.25);
         cursor: crosshair;
+        transform-origin: 0 0;
+        will-change: transform;
         image-rendering: pixelated;
-        flex: 0 0 auto;
     }
 </style>
 
@@ -55,14 +47,15 @@
     [Parameter] public EventCallback<(double X, double Y)> PointerDown { get; set; }
     [Parameter] public EventCallback<(double X, double Y)> PointerMove { get; set; }
     [Parameter] public EventCallback PointerUp { get; set; }
+    [Parameter] public EventCallback SettingsChanged { get; set; }
 
-    /// <summary>Ссылка на модуль — родитель может вызвать init/clear/save.</summary>
     public IJSObjectReference? Module { get; private set; }
 
     private ElementReference _canvas;
+    private ElementReference _stage;
     private bool _initialized;
+    private bool _wheelHooked;
 
-    // запоминаем последние применённые настройки, чтобы не дёргать resize зря
     private int _appliedWidth;
     private int _appliedHeight;
     private string _appliedBackground = "";
@@ -71,14 +64,13 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        // 1) Однократная инициализация JS-модуля
         if (!_initialized)
         {
             try
             {
                 var asm = typeof(Home).Assembly;
                 Module = await JsModuleLoader.LoadAsync(JS, asm, "Draw.js");
-                await Module.InvokeVoidAsync("init", _canvas, Settings.Background);
+                await Module.InvokeVoidAsync("init", _canvas, _stage, Settings.Background);
 
                 _appliedWidth = Settings.Width;
                 _appliedHeight = Settings.Height;
@@ -89,33 +81,41 @@
             {
                 Console.WriteLine($"[DrawCanvas] init failed: {ex}");
             }
-            return;
         }
 
-        // 2) Если настройки реально изменились — пересоздаём буфер
-        if (Module is null) return;
-
-        bool changed =
-            _appliedWidth != Settings.Width ||
-            _appliedHeight != Settings.Height ||
-            _appliedBackground != Settings.Background;
-
-        if (changed)
+        if (_initialized && Module is not null && !_wheelHooked)
         {
-            await Module.InvokeVoidAsync("resize",
-                Settings.Width, Settings.Height, Settings.Background);
+            try
+            {
+                await Module.InvokeVoidAsync("hookWheel", _stage);
+                _wheelHooked = true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[DrawCanvas] hookWheel failed: {ex}");
+            }
+        }
 
-            _appliedWidth = Settings.Width;
-            _appliedHeight = Settings.Height;
-            _appliedBackground = Settings.Background;
+        if (_initialized && Module is not null)
+        {
+            bool changed =
+                _appliedWidth != Settings.Width ||
+                _appliedHeight != Settings.Height ||
+                _appliedBackground != Settings.Background;
 
-            // сообщим родителю, чтобы он синхронизировал tool/color/size в свежий модуль
-            await SettingsChanged.InvokeAsync();
+            if (changed)
+            {
+                await Module.InvokeVoidAsync("resize",
+                    Settings.Width, Settings.Height, Settings.Background);
+
+                _appliedWidth = Settings.Width;
+                _appliedHeight = Settings.Height;
+                _appliedBackground = Settings.Background;
+
+                await SettingsChanged.InvokeAsync();
+            }
         }
     }
-
-    /// <summary>Сообщает родителю, что холст пересоздан (нужно вызвать sync).</summary>
-    [Parameter] public EventCallback SettingsChanged { get; set; }
 
     private async Task OnMouseDown(MouseEventArgs e) =>
         await PointerDown.InvokeAsync((e.ClientX, e.ClientY));
@@ -132,6 +132,7 @@
         {
             try
             {
+                await Module.InvokeVoidAsync("unhookWheel");
                 await Module.InvokeVoidAsync("dispose");
                 await Module.DisposeAsync();
             }
