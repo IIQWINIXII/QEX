@@ -32,3 +32,14 @@
 </body>
 
 </html>
+
+<script>
+    window.qex = window.qex || {};
+    window.qex.createModuleUrl = function (js) {
+        const blob = new Blob([js], { type: 'text/javascript' });
+        return URL.createObjectURL(blob);
+    };
+    window.qex.revokeModuleUrl = function (url) {
+        try { URL.revokeObjectURL(url); } catch { }
+    };
+</script>

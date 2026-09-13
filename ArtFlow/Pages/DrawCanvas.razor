@@ -1,0 +1,142 @@
+﻿@* Components/DrawCanvas.razor *@
+@using ArtFlow.Classes
+@using Microsoft.JSInterop
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+
+<div class="canvas-stage">
+    <div class="canvas-scroll">
+        <canvas @ref="_canvas"
+                id="drawCanvas"
+                width="@Settings.Width"
+                height="@Settings.Height"
+                style="background:@Settings.Background;"
+                @onmousedown="OnMouseDown"
+                @onmousemove="OnMouseMove"
+                @onmouseup="OnMouseUp"
+                @onmouseleave="OnMouseLeave">
+        </canvas>
+    </div>
+</div>
+
+<style>
+    .canvas-stage {
+        flex: 1 1 auto;
+        min-width: 0;
+        min-height: 0;
+        background: #d0d0d0;
+        display: flex;
+        overflow: hidden;
+    }
+
+    .canvas-scroll {
+        flex: 1 1 auto;
+        overflow: auto;
+        padding: 16px;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        box-sizing: border-box;
+    }
+
+    canvas {
+        display: block;
+        border: 1px solid #444;
+        box-shadow: 0 2px 8px rgba(0,0,0,.25);
+        cursor: crosshair;
+        image-rendering: pixelated;
+        flex: 0 0 auto;
+    }
+</style>
+
+@code {
+    [Parameter, EditorRequired] public CanvasSettings Settings { get; set; } = new();
+
+    [Parameter] public EventCallback<(double X, double Y)> PointerDown { get; set; }
+    [Parameter] public EventCallback<(double X, double Y)> PointerMove { get; set; }
+    [Parameter] public EventCallback PointerUp { get; set; }
+
+    /// <summary>Ссылка на модуль — родитель может вызвать init/clear/save.</summary>
+    public IJSObjectReference? Module { get; private set; }
+
+    private ElementReference _canvas;
+    private bool _initialized;
+
+    // запоминаем последние применённые настройки, чтобы не дёргать resize зря
+    private int _appliedWidth;
+    private int _appliedHeight;
+    private string _appliedBackground = "";
+
+    public ElementReference CanvasRef => _canvas;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // 1) Однократная инициализация JS-модуля
+        if (!_initialized)
+        {
+            try
+            {
+                var asm = typeof(Home).Assembly;
+                Module = await JsModuleLoader.LoadAsync(JS, asm, "Draw.js");
+                await Module.InvokeVoidAsync("init", _canvas, Settings.Background);
+
+                _appliedWidth = Settings.Width;
+                _appliedHeight = Settings.Height;
+                _appliedBackground = Settings.Background;
+                _initialized = true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[DrawCanvas] init failed: {ex}");
+            }
+            return;
+        }
+
+        // 2) Если настройки реально изменились — пересоздаём буфер
+        if (Module is null) return;
+
+        bool changed =
+            _appliedWidth != Settings.Width ||
+            _appliedHeight != Settings.Height ||
+            _appliedBackground != Settings.Background;
+
+        if (changed)
+        {
+            await Module.InvokeVoidAsync("resize",
+                Settings.Width, Settings.Height, Settings.Background);
+
+            _appliedWidth = Settings.Width;
+            _appliedHeight = Settings.Height;
+            _appliedBackground = Settings.Background;
+
+            // сообщим родителю, чтобы он синхронизировал tool/color/size в свежий модуль
+            await SettingsChanged.InvokeAsync();
+        }
+    }
+
+    /// <summary>Сообщает родителю, что холст пересоздан (нужно вызвать sync).</summary>
+    [Parameter] public EventCallback SettingsChanged { get; set; }
+
+    private async Task OnMouseDown(MouseEventArgs e) =>
+        await PointerDown.InvokeAsync((e.ClientX, e.ClientY));
+
+    private async Task OnMouseMove(MouseEventArgs e) =>
+        await PointerMove.InvokeAsync((e.ClientX, e.ClientY));
+
+    private async Task OnMouseUp(MouseEventArgs e) => await PointerUp.InvokeAsync();
+    private async Task OnMouseLeave() => await PointerUp.InvokeAsync();
+
+    public async ValueTask DisposeAsync()
+    {
+        if (Module is not null)
+        {
+            try
+            {
+                await Module.InvokeVoidAsync("dispose");
+                await Module.DisposeAsync();
+            }
+            catch (JSDisconnectedException) { }
+            catch (ObjectDisposedException) { }
+        }
+    }
+}

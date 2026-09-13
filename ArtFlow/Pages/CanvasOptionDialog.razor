@@ -1,0 +1,202 @@
+﻿@* Components/CanvasSizeDialog.razor *@
+@using ArtFlow.Classes
+
+@if (Visible)
+{
+    <div class="dialog-backdrop" @onclick="OnBackdropClick">
+        <div class="dialog" @onclick:stopPropagation="true">
+            <h3>Настройки холста</h3>
+
+            <div class="row">
+                <label>Пресет:</label>
+                <select @onchange="OnPresetChanged">
+                    <option value="">— выберите —</option>
+                    @foreach (var p in CanvasSettings.Presets)
+                    {
+                        <option value="@($"{p.W}x{p.H}")">@p.Name</option>
+                    }
+                </select>
+            </div>
+
+            <div class="row">
+                <label>Ширина (px):</label>
+                <input type="number" min="1" max="8000"
+                       value="@_w" @oninput="OnWidthInput" />
+            </div>
+
+            <div class="row">
+                <label>Высота (px):</label>
+                <input type="number" min="1" max="8000"
+                       value="@_h" @oninput="OnHeightInput" />
+            </div>
+
+            <div class="row">
+                <label>Фон:</label>
+                <input type="color" value="@_bg" @oninput="OnBgInput" />
+                <button class="mini" @onclick="@(() => _bg = "#FFFFFF")">Белый</button>
+                <button class="mini" @onclick="@(() => _bg = "#000000")">Чёрный</button>
+                <button class="mini" @onclick="@(() => _bg = "transparent")">Прозрачный</button>
+            </div>
+
+            <div class="actions">
+                <button @onclick="Cancel">Отмена</button>
+                <button class="primary" @onclick="Apply">Применить</button>
+            </div>
+        </div>
+    </div>
+}
+
+<style>
+    .dialog-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,.45);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
+
+    .dialog {
+        background: #fff;
+        border-radius: 10px;
+        padding: 20px 24px;
+        min-width: 360px;
+        box-shadow: 0 8px 32px rgba(0,0,0,.3);
+        font-family: system-ui, sans-serif;
+    }
+
+        .dialog h3 {
+            margin: 0 0 16px;
+            font-size: 16px;
+        }
+
+    .row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+
+        .row label {
+            width: 110px;
+            font-size: 13px;
+            color: #333;
+        }
+
+        .row input[type=number] {
+            width: 100px;
+            padding: 4px 6px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .row select {
+            padding: 4px 6px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            flex: 1;
+        }
+
+    .mini {
+        font-size: 12px;
+        padding: 3px 8px;
+        border: 1px solid #ccc;
+        background: #fff;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+        .mini:hover {
+            background: #e9ecef;
+        }
+
+    .actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        margin-top: 18px;
+    }
+
+        .actions button {
+            padding: 6px 14px;
+            border: 1px solid #ccc;
+            background: #fff;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+            .actions button.primary {
+                background: #0078d7;
+                color: #fff;
+                border-color: #005a9e;
+            }
+
+            .actions button:hover {
+                filter: brightness(0.96);
+            }
+</style>
+
+@code {
+    [Parameter] public bool Visible { get; set; }
+    [Parameter] public EventCallback<bool> VisibleChanged { get; set; }
+    [Parameter] public CanvasSettings? Settings { get; set; }
+    [Parameter] public EventCallback<CanvasSettings> Applied { get; set; }
+
+    private int _w = 800;
+    private int _h = 500;
+    private string _bg = "#FFFFFF";
+
+    protected override void OnParametersSet()
+    {
+        if (Settings is not null)
+        {
+            _w = Settings.Width;
+            _h = Settings.Height;
+            _bg = Settings.Background;
+        }
+    }
+
+    private void OnPresetChanged(ChangeEventArgs e)
+    {
+        var v = e.Value?.ToString();
+        if (string.IsNullOrEmpty(v)) return;
+        var parts = v.Split('x');
+        if (parts.Length == 2 &&
+            int.TryParse(parts[0], out var w) &&
+            int.TryParse(parts[1], out var h))
+        {
+            _w = w;
+            _h = h;
+        }
+    }
+
+    private void OnWidthInput(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var v))
+            _w = Math.Clamp(v, 1, 8000);
+    }
+
+    private void OnHeightInput(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var v))
+            _h = Math.Clamp(v, 1, 8000);
+    }
+
+    private void OnBgInput(ChangeEventArgs e)
+    {
+        _bg = e.Value?.ToString() ?? "#FFFFFF";
+    }
+
+    private async Task Apply()
+    {
+        var s = new CanvasSettings { Width = _w, Height = _h, Background = _bg };
+        await Applied.InvokeAsync(s);
+        await VisibleChanged.InvokeAsync(false);
+    }
+
+    private async Task Cancel() => await VisibleChanged.InvokeAsync(false);
+
+    private async Task OnBackdropClick() => await VisibleChanged.InvokeAsync(false);
+}
