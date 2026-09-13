@@ -85,12 +85,11 @@
                 background: #e9ecef;
             }
 
-
     .workspace {
         flex: 1 1 auto;
         min-height: 0;
         display: grid;
-        grid-template-columns: 56px 1fr 220px; /* инструменты | холст | правая панель */
+        grid-template-columns: 56px 1fr 220px;
         align-items: stretch;
         background: #e9ecef;
         overflow: hidden;
@@ -146,20 +145,19 @@
 
         if (_canvasRef?.Module is not null)
         {
-            // resize сбросит буферы слоёв внутри JS
-            await _canvasRef.Module.InvokeVoidAsync("resize", s.Width, s.Height, s.Background);
+            await _canvasRef.Module.InvokeVoidAsync(
+                "resize", s.Width, s.Height, s.Background);
             await SyncLayersAfterResize();
             await SyncSettings();
         }
     }
 
-    /// <summary>После resize нужно пересоздать слои в JS согласно списку.</summary>
     private async Task SyncLayersAfterResize()
     {
         if (_canvasRef?.Module is null) return;
         var ids = _layers.Select(l => l.Id).ToArray();
         await _canvasRef.Module.InvokeVoidAsync("reinitLayers", ids, _activeLayerId);
-        await SyncLayerProps();
+        await SyncAllLayers();
     }
 
     // ---------- Инструмент/цвет/размер ----------
@@ -227,6 +225,7 @@
             $"a.download='art.png';a.click();");
     }
 
+    private async Task HandleClose() => await OnClose.InvokeAsync();
 
     // ---------- Слои ----------
 
@@ -241,6 +240,7 @@
                 _activeLayerId = a.Id;
                 if (_canvasRef?.Module is not null)
                     await _canvasRef.Module.InvokeVoidAsync("setActiveLayer", a.Id);
+                await SyncActiveProps();
                 break;
 
             case LayerActionKind.Add:
@@ -250,7 +250,7 @@
                     _activeLayerId = l.Id;
                     if (_canvasRef?.Module is not null)
                         await _canvasRef.Module.InvokeVoidAsync("addLayer", l.Id);
-                    await SyncLayerProps();
+                    await SyncAllLayers();
                     break;
                 }
 
@@ -258,17 +258,14 @@
                 {
                     var i = ActiveLayerIndex;
                     if (i < 0) break;
+                    var srcId = _layers[i].Id;
                     var copy = _layers[i].Clone();
                     _layers.Insert(i + 1, copy);
                     _activeLayerId = copy.Id;
                     if (_canvasRef?.Module is not null)
-                    {
                         await _canvasRef.Module.InvokeVoidAsync(
-                            "duplicateLayer", _layers[i].Id, copy.Id);
-                        await _canvasRef.Module.InvokeVoidAsync("setActiveLayer", copy.Id);
-                    }
-                    await SyncLayerOrder();
-                    await SyncLayerProps();
+                            "duplicateLayer", srcId, copy.Id);
+                    await SyncAllLayers();
                     break;
                 }
 
@@ -279,15 +276,10 @@
                     if (i < 0) break;
                     var id = _layers[i].Id;
                     _layers.RemoveAt(i);
-                    var newIndex = Math.Max(0, i - 1);
-                    _activeLayerId = _layers[newIndex].Id;
+                    _activeLayerId = _layers[Math.Max(0, i - 1)].Id;
                     if (_canvasRef?.Module is not null)
-                    {
                         await _canvasRef.Module.InvokeVoidAsync("deleteLayer", id);
-                        await _canvasRef.Module.InvokeVoidAsync("setActiveLayer", _activeLayerId);
-                    }
-                    await SyncLayerOrder();
-                    await SyncLayerProps();
+                    await SyncAllLayers();
                     break;
                 }
 
@@ -296,7 +288,7 @@
                     var i = ActiveLayerIndex;
                     if (i < 0 || i >= _layers.Count - 1) break;
                     (_layers[i], _layers[i + 1]) = (_layers[i + 1], _layers[i]);
-                    await SyncLayerOrder();
+                    await SyncAllLayers();
                     break;
                 }
 
@@ -305,7 +297,7 @@
                     var i = ActiveLayerIndex;
                     if (i <= 0) break;
                     (_layers[i], _layers[i - 1]) = (_layers[i - 1], _layers[i]);
-                    await SyncLayerOrder();
+                    await SyncAllLayers();
                     break;
                 }
 
@@ -327,7 +319,7 @@
                     if (i >= 0 && a.BlendMode is not null)
                     {
                         _layers[i].BlendMode = a.BlendMode;
-                        await SyncLayerProps();
+                        await SyncActiveProps();
                     }
                     break;
                 }
@@ -338,7 +330,7 @@
                     if (i >= 0 && a.Opacity is double op)
                     {
                         _layers[i].Opacity = op;
-                        await SyncLayerProps();
+                        await SyncActiveProps();
                     }
                     break;
                 }
@@ -355,14 +347,24 @@
         StateHasChanged();
     }
 
-    private async Task SyncLayerOrder()
+    /// <summary>Полная синхронизация: порядок + активный + props.</summary>
+    private async Task SyncAllLayers()
     {
         if (_canvasRef?.Module is null) return;
+
         var ids = _layers.Select(l => l.Id).ToArray();
-        await _canvasRef.Module.InvokeVoidAsync("setLayerOrder", ids);
+        var active = _layers.FirstOrDefault(l => l.Id == _activeLayerId)
+                     ?? _layers.LastOrDefault();
+
+        var opacity = active?.Opacity ?? 1.0;
+        var blend = active?.BlendMode ?? "source-over";
+
+        await _canvasRef.Module.InvokeVoidAsync(
+            "syncLayers", ids, active?.Id, opacity, blend);
     }
 
-    private async Task SyncLayerProps()
+    /// <summary>Обновляет только props активного слоя.</summary>
+    private async Task SyncActiveProps()
     {
         var i = ActiveLayerIndex;
         if (i < 0 || _canvasRef?.Module is null) return;

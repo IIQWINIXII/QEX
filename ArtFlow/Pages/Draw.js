@@ -39,15 +39,6 @@ function getActiveLayer() {
     return layers.find(l => l.id === activeLayerId) || null;
 }
 
-function fillBackground() {
-    if (!ctx) return;
-    ctx.clearRect(0, 0, canvasEl.width, canvasEl.height);
-    if (background && background !== 'transparent') {
-        ctx.fillStyle = background;
-        ctx.fillRect(0, 0, canvasEl.width, canvasEl.height);
-    }
-}
-
 function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
 
 /* ============================================================
@@ -112,7 +103,6 @@ export function resize(w, h, bg) {
     canvasEl.height = h;
     if (typeof bg === 'string') background = bg;
 
-    // пересоздаём буферы слоёв под новый размер (содержимое сбрасывается)
     for (const l of layers) {
         l.canvas = makeOffscreen(w, h);
     }
@@ -210,17 +200,41 @@ export function setActiveLayerProps(opacity, blendMode) {
     composite();
 }
 
-export function setLayerOrder(idsInOrder) {
+/**
+ * Полная синхронизация: порядок + активный + props.
+ * ids — массив снизу вверх. activeId — активный слой.
+ * opacity/blendMode применяются к активному.
+ */
+export function syncLayers(ids, activeId, opacity, blendMode) {
+    if (!ctx) return;
+
+    // 1) Перестраиваем порядок
     const map = new Map(layers.map(l => [l.id, l]));
-    const reordered = [];
-    for (const id of idsInOrder) {
+    const next = [];
+    for (const id of ids) {
         const l = map.get(id);
-        if (l) reordered.push(l);
+        if (l) next.push(l);
     }
+    // если что-то есть в JS, но нет в Blazor-списке — сохраняем в конце
     for (const l of layers) {
-        if (!idsInOrder.includes(l.id)) reordered.push(l);
+        if (!ids.includes(l.id)) next.push(l);
     }
-    layers = reordered;
+    layers = next;
+
+    // 2) Активный слой
+    if (activeId && layers.some(l => l.id === activeId)) {
+        activeLayerId = activeId;
+    } else if (!activeLayerId || !layers.some(l => l.id === activeLayerId)) {
+        activeLayerId = layers.length ? layers[layers.length - 1].id : null;
+    }
+
+    // 3) Props активного
+    const active = layers.find(l => l.id === activeLayerId);
+    if (active) {
+        if (typeof opacity === 'number') active.opacity = opacity;
+        if (typeof blendMode === 'string') active.blendMode = blendMode;
+    }
+
     composite();
 }
 
