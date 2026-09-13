@@ -73,3 +73,8 @@ export function end() {
 export function clear() {
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 }
+export function dispose() {
+    ctx = null;
+    isDrawing = false;
+    savedData = null;
+}

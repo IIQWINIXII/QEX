@@ -1,89 +1,75 @@
-﻿@using Microsoft.JSInterop
+﻿@* Components/Draw.razor *@
+@using Microsoft.JSInterop
 @implements IAsyncDisposable
 @inject IJSRuntime JS
 
 <div class="draw-app">
     <div class="toolbar">
-        <!-- Инструменты (кавычки экранированы через @() для безопасного парсинга Razor) -->
-        <div class="group">
-            <button @onclick="@(() => SetTool("pencil"))" class="@(_tool == "pencil" ? "active" : "")">✏️ Кисть</button>
-            <button @onclick="@(() => SetTool("line"))" class="@(_tool == "line" ? "active" : "")">📏 Линия</button>
-            <button @onclick="@(() => SetTool("rect"))" class="@(_tool == "rect" ? "active" : "")">⬜ Прям.</button>
-            <button @onclick="@(() => SetTool("circle"))" class="@(_tool == "circle" ? "active" : "")">⭕ Круг</button>
-        </div>
-
-        <!-- Палитра + произвольный цвет -->
-        <div class="group">
-            @foreach (var c in _palette)
-            {
-                <button @onclick="@(() => SetColor(c))" class="color-btn" style="background:@c; border:@(c == _color ? "2px solid #0078d7" : "1px solid #aaa")"></button>
-            }
-            <input type="color" @bind="_color" @bind:after="SyncSettings" style="width:32px;height:28px;padding:0;border:none;cursor:pointer;" title="Свой цвет">
-        </div>
-
-        <!-- Размер кисти -->
-        <div class="group">
-            <label style="font-size:12px;margin-right:5px;">@_size px</label>
-            <input type="range" min="1" max="20" value="@_size" @oninput="OnSizeInput" style="width:80px;">
-        </div>
-
-        <!-- Действия -->
+        <span class="title">✏️ Рисование</span>
         <div class="group" style="margin-left:auto;">
             <button @onclick="Clear">🗑 Очистить</button>
             <button @onclick="HandleClose" class="btn-close">✖ Закрыть</button>
         </div>
     </div>
 
-    <canvas @ref="_canvas" id="drawCanvas" width="800" height="500"
-            @onmousedown="OnMouseDown" @onmousemove="OnMouseMove" @onmouseup="OnMouseUp" @onmouseleave="OnMouseLeave"
-            style="border: 1px solid #444; background: #fff; cursor: crosshair; display: block; max-width: 100%;">
-    </canvas>
+    <div class="workspace">
+        <ToolsPanel Selected="@_tool" SelectedChanged="OnToolChanged" />
+
+        <div class="canvas-wrap">
+            <canvas @ref="_canvas" id="drawCanvas" width="800" height="500"
+                    @onmousedown="OnMouseDown" @onmousemove="OnMouseMove"
+                    @onmouseup="OnMouseUp" @onmouseleave="OnMouseLeave">
+            </canvas>
+        </div>
+
+        <ColorPanel Selected="@_color"
+                    SelectedChanged="OnColorChanged"
+                    Size="@_size"
+                    SizeChanged="OnSizeChanged" />
+    </div>
 </div>
 
 <style>
     .draw-app {
-        max-width: 820px;
+        max-width: 1000px;
         margin: 1rem auto;
         font-family: system-ui, sans-serif;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        overflow: hidden;
+        background: #fafafa;
+        display: flex;
+        flex-direction: column;
     }
 
     .toolbar {
         display: flex;
         align-items: center;
         gap: 10px;
-        padding: 10px;
+        padding: 8px 12px;
         background: #f5f5f5;
-        border-radius: 8px 8px 0 0;
-        border: 1px solid #ddd;
-        border-bottom: none;
-        flex-wrap: wrap;
+        border-bottom: 1px solid #ddd;
     }
 
-    .group {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-    }
-
-    .toolbar button {
-        padding: 6px 10px;
-        cursor: pointer;
-        border: 1px solid #ccc;
-        background: #fff;
-        border-radius: 4px;
-        font-size: 13px;
-        transition: all 0.2s;
-    }
-
-        .toolbar button:hover {
-            background: #e9ecef;
+        .toolbar .title {
+            font-weight: 600;
+            font-size: 14px;
+            color: #333;
         }
 
-        .toolbar button.active {
-            background: #0078d7;
-            color: white;
-            border-color: #005a9e;
+        .toolbar button {
+            padding: 6px 10px;
+            cursor: pointer;
+            border: 1px solid #ccc;
+            background: #fff;
+            border-radius: 4px;
+            font-size: 13px;
+            transition: all 0.2s;
         }
+
+            .toolbar button:hover {
+                background: #e9ecef;
+            }
 
     .btn-close {
         background: #dc3545;
@@ -95,12 +81,29 @@
             background: #bb2d3b;
         }
 
-    .color-btn {
-        width: 24px;
-        height: 24px;
-        border-radius: 50%;
-        padding: 0;
-        cursor: pointer;
+    .workspace {
+        display: grid;
+        grid-template-columns: 56px 1fr 56px;
+        align-items: stretch;
+        background: #e9ecef;
+    }
+
+    .canvas-wrap {
+        padding: 12px;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        background: #e9ecef;
+    }
+
+    canvas {
+        border: 1px solid #444;
+        background: #fff;
+        cursor: crosshair;
+        display: block;
+        max-width: 100%;
+        border-radius: 4px;
+        box-shadow: 0 1px 4px rgba(0,0,0,.15);
     }
 </style>
 
@@ -113,19 +116,14 @@
     private string _color = "#000000";
     private int _size = 3;
 
-    private static readonly string[] _palette =
-        { "#000000", "#FFFFFF", "#FF0000", "#00AA00", "#0000FF",
-          "#FFD700", "#FF00FF", "#00CED1", "#FF8C00", "#800080" };
-
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender) return;
 
         try
         {
-            // Грузим JS из embedded resource сборки ArtFlow
             var asm = typeof(Home).Assembly;
-            _module = await JsModuleLoader.LoadAsync(JS, typeof(Home).Assembly, "Draw.js");
+            _module = await JsModuleLoader.LoadAsync(JS, asm, "Draw.js");
 
             await _module.InvokeVoidAsync("init", _canvas);
             await SyncSettings();
@@ -133,8 +131,6 @@
         catch (Exception ex)
         {
             Console.WriteLine($"[Draw] init failed: {ex}");
-            // раскомментируй ниже, если хочешь увидеть ошибку прямо в UI
-            // throw;
         }
     }
 
@@ -144,11 +140,37 @@
         await _module.InvokeVoidAsync("sync", _tool, _color, _size);
     }
 
+    // ---- Обработчики панелей ----
+
+    private async Task OnToolChanged(string tool)
+    {
+        _tool = tool;
+        StateHasChanged();
+        await SyncSettings();
+    }
+
+    private async Task OnColorChanged(string color)
+    {
+        _color = color;
+        StateHasChanged();
+        await SyncSettings();
+    }
+
+    private async Task OnSizeChanged(int size)
+    {
+        _size = size;
+        StateHasChanged();
+        await SyncSettings();
+    }
+
+    // ---- Мышь ----
+
     private async Task OnMouseDown(MouseEventArgs e)
     {
         if (_module is null) return;
         await _module.InvokeVoidAsync("start", e.ClientX, e.ClientY);
     }
+
     private async Task OnMouseMove(MouseEventArgs e)
     {
         if (_module is null) return;
@@ -167,18 +189,7 @@
         await _module.InvokeVoidAsync("end");
     }
 
-    private async Task SetTool(string t) { _tool = t; await SyncSettings(); }
-    private async Task SetColor(string c) { _color = c; await SyncSettings(); }
-
-    private void OnSizeInput(ChangeEventArgs e)
-    {
-        if (int.TryParse(e.Value?.ToString(), out int newSize))
-        {
-            _size = newSize;
-            StateHasChanged();
-            _ = SyncSettings();
-        }
-    }
+    // ---- Действия ----
 
     private async Task Clear()
     {
@@ -192,8 +203,13 @@
     {
         if (_module is not null)
         {
-            try { await _module.DisposeAsync(); }
+            try
+            {
+                await _module.InvokeVoidAsync("dispose");
+                await _module.DisposeAsync();
+            }
             catch (JSDisconnectedException) { }
+            catch (ObjectDisposedException) { }
         }
     }
 }
