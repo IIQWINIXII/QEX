@@ -1,5 +1,6 @@
 ﻿@* Components/Draw.razor *@
 @using ArtFlow.Classes
+@using ArtFlow.Pages
 @using Microsoft.JSInterop
 @inject IJSRuntime JS
 
@@ -25,12 +26,12 @@
                     SettingsChanged="SyncSettings" />
 
         <div class="right-dock">
-            <div class="color-wrap">
-                <ColorPanel Selected="@_color"
-                            SelectedChanged="OnColorChanged"
-                            Size="@_size"
-                            SizeChanged="OnSizeChanged" />
-            </div>
+            <!-- Цвет и размер теперь аккуратно сгруппированы внутри ColorPanel -->
+            <ColorPanel Selected="@_color"
+                        SelectedChanged="OnColorChanged"
+                        Size="@_size"
+                        SizeChanged="OnSizeChanged" />
+
             <div class="layers-wrap">
                 <LayersPanel Layers="_layers"
                              ActiveId="@_activeLayerId"
@@ -89,7 +90,7 @@
         flex: 1 1 auto;
         min-height: 0;
         display: grid;
-        grid-template-columns: 56px 1fr 220px;
+        grid-template-columns: 56px 1fr 280px;
         align-items: stretch;
         background: #e9ecef;
         overflow: hidden;
@@ -98,21 +99,17 @@
     .right-dock {
         display: flex;
         flex-direction: column;
-        background: #f5f5f5;
+        background: #fff;
         border-left: 1px solid #ddd;
         min-height: 0;
         overflow: hidden;
     }
 
-        .right-dock .color-wrap {
-            flex: 0 0 auto;
-            border-bottom: 1px solid #ddd;
-        }
-
         .right-dock .layers-wrap {
             flex: 1 1 auto;
             min-height: 0;
-            overflow: hidden;
+            overflow-y: auto;
+            overflow-x: hidden;
         }
 </style>
 
@@ -136,8 +133,6 @@
         _activeLayerId = first.Id;
     }
 
-    // ---------- Настройки холста ----------
-
     private async Task OnSettingsApplied(CanvasSettings s)
     {
         _settings = s;
@@ -145,8 +140,7 @@
 
         if (_canvasRef?.Module is not null)
         {
-            await _canvasRef.Module.InvokeVoidAsync(
-                "resize", s.Width, s.Height, s.Background);
+            await _canvasRef.Module.InvokeVoidAsync("resize", s.Width, s.Height, s.Background);
             await SyncLayersAfterResize();
             await SyncSettings();
         }
@@ -159,8 +153,6 @@
         await _canvasRef.Module.InvokeVoidAsync("reinitLayers", ids, _activeLayerId);
         await SyncAllLayers();
     }
-
-    // ---------- Инструмент/цвет/размер ----------
 
     private async Task SyncSettings()
     {
@@ -188,8 +180,6 @@
         StateHasChanged();
         await SyncSettings();
     }
-
-    // ---------- Мышь ----------
 
     private async Task OnPointerDown((double X, double Y) p)
     {
@@ -227,8 +217,6 @@
 
     private async Task HandleClose() => await OnClose.InvokeAsync();
 
-    // ---------- Слои ----------
-
     private int ActiveLayerIndex =>
         _activeLayerId is null ? -1 : _layers.FindIndex(l => l.Id == _activeLayerId);
 
@@ -263,8 +251,7 @@
                     _layers.Insert(i + 1, copy);
                     _activeLayerId = copy.Id;
                     if (_canvasRef?.Module is not null)
-                        await _canvasRef.Module.InvokeVoidAsync(
-                            "duplicateLayer", srcId, copy.Id);
+                        await _canvasRef.Module.InvokeVoidAsync("duplicateLayer", srcId, copy.Id);
                     await SyncAllLayers();
                     break;
                 }
@@ -307,8 +294,7 @@
                     {
                         _layers[idx].Visible = v;
                         if (_canvasRef?.Module is not null)
-                            await _canvasRef.Module.InvokeVoidAsync(
-                                "setLayerVisible", _layers[idx].Id, v);
+                            await _canvasRef.Module.InvokeVoidAsync("setLayerVisible", _layers[idx].Id, v);
                     }
                     break;
                 }
@@ -347,29 +333,24 @@
         StateHasChanged();
     }
 
-    /// <summary>Полная синхронизация: порядок + активный + props.</summary>
     private async Task SyncAllLayers()
     {
         if (_canvasRef?.Module is null) return;
 
         var ids = _layers.Select(l => l.Id).ToArray();
-        var active = _layers.FirstOrDefault(l => l.Id == _activeLayerId)
-                     ?? _layers.LastOrDefault();
+        var active = _layers.FirstOrDefault(l => l.Id == _activeLayerId) ?? _layers.LastOrDefault();
 
         var opacity = active?.Opacity ?? 1.0;
         var blend = active?.BlendMode ?? "source-over";
 
-        await _canvasRef.Module.InvokeVoidAsync(
-            "syncLayers", ids, active?.Id, opacity, blend);
+        await _canvasRef.Module.InvokeVoidAsync("syncLayers", ids, active?.Id, opacity, blend);
     }
 
-    /// <summary>Обновляет только props активного слоя.</summary>
     private async Task SyncActiveProps()
     {
         var i = ActiveLayerIndex;
         if (i < 0 || _canvasRef?.Module is null) return;
         var a = _layers[i];
-        await _canvasRef.Module.InvokeVoidAsync(
-            "setActiveLayerProps", a.Opacity, a.BlendMode);
+        await _canvasRef.Module.InvokeVoidAsync("setActiveLayerProps", a.Opacity, a.BlendMode);
     }
 }
