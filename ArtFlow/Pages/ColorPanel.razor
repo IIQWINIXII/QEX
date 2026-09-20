@@ -1,131 +1,415 @@
-﻿@* Components/ColorPanel.razor *@
+﻿@using Microsoft.JSInterop
+@implements IAsyncDisposable
+@inject IJSRuntime JS
 
 <div class="color-panel">
-    @foreach (var c in Palette)
-    {
-        <button @onclick="@(() => SelectColor(c))"
-                class="color-btn @(c == Selected ? "active" : "")"
-                style="background:@c;"
-                title="@c"></button>
-    }
+    <div class="wheel-container">
+        <canvas @ref="_canvas" class="color-wheel" width="220" height="220"></canvas>
+    </div>
 
-    <div class="divider"></div>
+    <div class="preview-row">
+        <div class="preview-swatch" style="background: @CurrentHex"></div>
+        <div class="hex-box">
+            <input type="text" class="hex-input" value="@CurrentHex" @onchange="OnHexInput" />
+        </div>
+    </div>
 
-    <input type="color"
-           value="@Selected"
-           @onchange="OnCustomColorChanged"
-           class="color-picker"
-           title="Свой цвет">
+    <div class="fields">
+        <label>
+            <span>H</span>
+            <input type="range" min="0" max="360" step="1" value="@H" @oninput="OnHInput" />
+        </label>
+        <label>
+            <span>S</span>
+            <input type="range" min="0" max="100" step="1" value="@S" @oninput="OnSInput" />
+        </label>
+        <label>
+            <span>V</span>
+            <input type="range" min="0" max="100" step="1" value="@V" @oninput="OnVInput" />
+        </label>
+    </div>
 
-    <div class="divider"></div>
-
-    <label class="size-label">@Size</label>
-    <input type="range" min="1" max="20" value="@Size"
-           @oninput="OnSizeInput"
-           class="size-slider" />
+    <div class="size-block">
+        <div class="size-label">
+            <span>Размер кисти</span>
+            <span class="size-value">@Size px</span>
+        </div>
+        <input type="range" min="1" max="100" value="@Size" @oninput="OnSizeInput" />
+    </div>
 </div>
 
 <style>
     .color-panel {
         display: flex;
         flex-direction: column;
-        align-items: center;
-        gap: 8px;
-        padding: 10px 6px;
-        background: #f5f5f5;
-        border-left: 1px solid #ddd;
-        height: 100%;
+        gap: 12px;
+        width: 100%;
+        height: auto;
+        padding: 12px;
         box-sizing: border-box;
+        user-select: none;
     }
 
-    .color-btn {
-        width: 32px;
-        height: 32px;
+    .wheel-container {
+        width: 100%;
+        height: 240px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-shrink: 0;
+        position: relative;
+    }
+
+    .color-wheel {
+        display: block;
+        width: 220px;
+        height: 220px;
+        flex-shrink: 0;
+        cursor: crosshair;
+        touch-action: none;
         border-radius: 50%;
-        padding: 0;
-        cursor: pointer;
-        border: 2px solid #ccc;
-        transition: transform .1s, box-shadow .15s;
+        box-shadow: 0 2px 8px rgba(0,0,0,.15);
     }
 
-        .color-btn:hover {
-            transform: scale(1.08);
-        }
-
-        .color-btn.active {
-            border-color: #0078d7;
-            box-shadow: 0 0 0 2px rgba(0,120,215,.35);
-        }
-
-    .divider {
-        width: 28px;
-        height: 1px;
-        background: #ccc;
-        margin: 2px 0;
+    .preview-row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
     }
 
-    .color-picker {
-        width: 36px;
-        height: 32px;
-        padding: 0;
-        border: 1px solid #ccc;
+    .preview-swatch {
+        width: 40px;
+        height: 40px;
         border-radius: 6px;
-        cursor: pointer;
+        border: 1px solid #ccc;
+        flex: 0 0 auto;
+    }
+
+    .hex-box {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    .hex-input {
+        width: 100%;
+        box-sizing: border-box;
+        font-family: monospace;
+        font-size: 13px;
+        text-align: center;
+        padding: 8px 4px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
         background: #fff;
     }
 
-    .size-label {
+    .fields {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
         font-size: 12px;
-        color: #333;
-        font-weight: 600;
+        color: #444;
     }
 
-    .size-slider {
-        writing-mode: vertical-lr;
-        direction: rtl;
-        width: 6px;
-        height: 100px;
-        cursor: pointer;
+        .fields label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+            .fields label span:first-child {
+                width: 16px;
+                font-weight: 600;
+            }
+
+        .fields input[type=range] {
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+
+    .size-block {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        padding-top: 8px;
+        border-top: 1px solid #e0e0e0;
+    }
+
+    .size-label {
+        display: flex;
+        justify-content: space-between;
+        font-size: 12px;
+        color: #444;
+    }
+
+        .size-label .size-value {
+            font-family: monospace;
+            font-weight: 600;
+        }
+
+    .size-block input[type=range] {
+        width: 100%;
     }
 </style>
 
 @code {
-    /// <summary>Текущий выбранный цвет.</summary>
     [Parameter] public string Selected { get; set; } = "#000000";
-
-    /// <summary>Текущий размер кисти.</summary>
-    [Parameter] public int Size { get; set; } = 3;
-
-    /// <summary>Уведомление родителя о смене цвета.</summary>
     [Parameter] public EventCallback<string> SelectedChanged { get; set; }
 
-    /// <summary>Уведомление родителя о смене размера.</summary>
+    [Parameter] public int Size { get; set; } = 3;
     [Parameter] public EventCallback<int> SizeChanged { get; set; }
 
-    private static readonly string[] Palette =
-    {
-        "#000000", "#FFFFFF", "#FF0000", "#00AA00", "#0000FF",
-        "#FFD700", "#FF00FF", "#00CED1", "#FF8C00", "#800080"
-    };
+    private ElementReference _canvas;
+    private IJSObjectReference? _module;
+    private DotNetObjectReference<ColorPanel>? _selfRef;
+    private bool _initialized;
 
-    private async Task SelectColor(string color)
+    private double _h = 0;
+    private double _s = 100;
+    private double _v = 100;
+
+    private int H => (int)Math.Round(_h);
+    private int S => (int)Math.Round(_s);
+    private int V => (int)Math.Round(_v);
+
+    private string CurrentHex => HsvToHex(_h, _s, _v);
+
+    protected override void OnParametersSet()
     {
-        if (color == Selected) return;
-        await SelectedChanged.InvokeAsync(color);
+        if (string.IsNullOrEmpty(Selected)) return;
+
+        var normalized = NormalizeHex(Selected);
+        if (!string.Equals(normalized, CurrentHex, StringComparison.OrdinalIgnoreCase))
+        {
+            var (h, s, v) = HexToHsv(normalized);
+            _h = h;
+            _s = s;
+            _v = v;
+        }
     }
 
-    private async Task OnCustomColorChanged(ChangeEventArgs e)
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        var value = e.Value?.ToString();
-        if (string.IsNullOrWhiteSpace(value)) return;
-        await SelectedChanged.InvokeAsync(value);
+        if (!_initialized && firstRender)
+        {
+            try
+            {
+                var asm = typeof(ArtFlow.Pages.Home).Assembly;
+                _module = await JsModuleLoader.LoadAsync(JS, asm, "ColorPanel.razor.js");
+
+                _selfRef = DotNetObjectReference.Create(this);
+                await _module.InvokeVoidAsync("init", _canvas, _selfRef);
+                await _module.InvokeVoidAsync("redraw", _h, _s, _v);
+
+                _initialized = true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ColorPanel] init failed: {ex}");
+            }
+            return;
+        }
+
+        if (_initialized && _module is not null)
+        {
+            await _module.InvokeVoidAsync("redraw", _h, _s, _v);
+        }
+    }
+
+    [JSInvokable]
+    public async Task OnJsPointer(double nx, double ny, bool isDown)
+    {
+        const double InnerR = 0.78;
+        var dist = Math.Sqrt(nx * nx + ny * ny);
+
+        if (dist > InnerR)
+        {
+            var angle =
+                Math.Atan2(ny, nx)
+                * 180.0
+                / Math.PI;
+
+            _h =
+                (angle + 360.0)
+                % 360.0;
+        }
+        else
+        {
+            UpdateSvFromSquare(nx, ny);
+        }
+
+        if (_module is not null)
+            await _module.InvokeVoidAsync("redraw", _h, _s, _v);
+
+        await EmitChanged();
+    }
+    private void UpdateSvFromSquare(double nx, double ny)
+    {
+        const double InnerR = 0.78;
+
+        double squareSize = InnerR * 1.35;
+
+        double minX = -squareSize / 2;
+        double maxX = squareSize / 2;
+
+        double minY = -squareSize / 2;
+        double maxY = squareSize / 2;
+
+        double x = Math.Clamp(nx, minX, maxX);
+        double y = Math.Clamp(ny, minY, maxY);
+
+        _s =
+            ((x - minX) / squareSize)
+            * 100.0;
+
+        _v =
+            (1.0 -
+            ((y - minY) / squareSize))
+            * 100.0;
+    }
+
+    private async Task OnHInput(ChangeEventArgs e)
+    {
+        if (TryParseDouble(e, out var val))
+        {
+            _h = val;
+            if (_module is not null) await _module.InvokeVoidAsync("redraw", _h, _s, _v);
+            await EmitChanged();
+        }
+    }
+
+    private async Task OnSInput(ChangeEventArgs e)
+    {
+        if (TryParseDouble(e, out var val))
+        {
+            _s = val;
+            if (_module is not null) await _module.InvokeVoidAsync("redraw", _h, _s, _v);
+            await EmitChanged();
+        }
+    }
+
+    private async Task OnVInput(ChangeEventArgs e)
+    {
+        if (TryParseDouble(e, out var val))
+        {
+            _v = val;
+            if (_module is not null) await _module.InvokeVoidAsync("redraw", _h, _s, _v);
+            await EmitChanged();
+        }
+    }
+
+    private async Task OnHexInput(ChangeEventArgs e)
+    {
+        var raw = e.Value?.ToString() ?? "";
+        var normalized = NormalizeHex(raw);
+        if (normalized.Length != 7) return;
+
+        var (h, s, v) = HexToHsv(normalized);
+        _h = h; _s = s; _v = v;
+
+        if (_module is not null) await _module.InvokeVoidAsync("redraw", _h, _s, _v);
+        await EmitChanged();
     }
 
     private async Task OnSizeInput(ChangeEventArgs e)
     {
-        if (int.TryParse(e.Value?.ToString(), out int newSize))
+        if (int.TryParse(e.Value?.ToString(), out var val))
         {
-            await SizeChanged.InvokeAsync(newSize);
+            Size = val;
+            await SizeChanged.InvokeAsync(val);
         }
+    }
+
+    private async Task EmitChanged()
+    {
+        var hex = CurrentHex;
+        if (!string.Equals(hex, Selected, StringComparison.OrdinalIgnoreCase))
+        {
+            Selected = hex;
+            await SelectedChanged.InvokeAsync(hex);
+        }
+    }
+
+    private static bool TryParseDouble(ChangeEventArgs e, out double value)
+    {
+        value = 0;
+        var s = e.Value?.ToString();
+        if (string.IsNullOrEmpty(s)) return false;
+        return double.TryParse(s, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out value);
+    }
+
+    private static string NormalizeHex(string hex)
+    {
+        if (string.IsNullOrWhiteSpace(hex)) return "#000000";
+        hex = hex.Trim().TrimStart('#');
+        if (hex.Length == 3)
+            hex = $"{hex[0]}{hex[0]}{hex[1]}{hex[1]}{hex[2]}{hex[2]}";
+        if (hex.Length != 6) return "#000000";
+        foreach (var ch in hex)
+            if (!Uri.IsHexDigit(ch)) return "#000000";
+        return "#" + hex.ToUpperInvariant();
+    }
+
+    public static string HsvToHex(double h, double s, double v)
+    {
+        double c = v / 100.0 * s / 100.0;
+        double hh = ((h % 360.0) + 360.0) % 360.0 / 60.0;
+        double x = c * (1 - Math.Abs(hh % 2 - 1));
+        double m = v / 100.0 - c;
+
+        double r1 = 0, g1 = 0, b1 = 0;
+        if (hh < 1) { r1 = c; g1 = x; b1 = 0; }
+        else if (hh < 2) { r1 = x; g1 = c; b1 = 0; }
+        else if (hh < 3) { r1 = 0; g1 = c; b1 = x; }
+        else if (hh < 4) { r1 = 0; g1 = x; b1 = c; }
+        else if (hh < 5) { r1 = x; g1 = 0; b1 = c; }
+        else { r1 = c; g1 = 0; b1 = x; }
+
+        int r = (int)Math.Round((r1 + m) * 255);
+        int g = (int)Math.Round((g1 + m) * 255);
+        int b = (int)Math.Round((b1 + m) * 255);
+
+        return $"#{r:X2}{g:X2}{b:X2}";
+    }
+
+    public static (double H, double S, double V) HexToHsv(string hex)
+    {
+        hex = NormalizeHex(hex).TrimStart('#');
+        int r = Convert.ToInt32(hex.Substring(0, 2), 16);
+        int g = Convert.ToInt32(hex.Substring(2, 2), 16);
+        int b = Convert.ToInt32(hex.Substring(4, 2), 16);
+
+        double rf = r / 255.0, gf = g / 255.0, bf = b / 255.0;
+        double max = Math.Max(rf, Math.Max(gf, bf));
+        double min = Math.Min(rf, Math.Min(gf, bf));
+        double d = max - min;
+
+        double h = 0;
+        if (d > 0)
+        {
+            if (max == rf) h = 60 * (((gf - bf) / d) % 6);
+            else if (max == gf) h = 60 * ((bf - rf) / d + 2);
+            else h = 60 * ((rf - gf) / d + 4);
+        }
+        if (h < 0) h += 360;
+
+        double s = max <= 0 ? 0 : d / max * 100.0;
+        double v = max * 100.0;
+
+        return (h, s, v);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_module is not null)
+        {
+            try
+            {
+                await _module.InvokeVoidAsync("dispose");
+                await _module.DisposeAsync();
+            }
+            catch (JSDisconnectedException) { }
+            catch (ObjectDisposedException) { }
+        }
+        _selfRef?.Dispose();
     }
 }

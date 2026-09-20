@@ -6,8 +6,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
-  <ItemGroup>
-    <EmbeddedResource Include="Pages\Draw.js" />
+  <ItemGroup> <!--всегда добавлять новые ресурсы или обновлять их для правильной работы js пока не найду способ лучше-->
+      <EmbeddedResource Include="Pages\Draw.js" />
+	  <EmbeddedResource Include="Pages\ColorPanel.razor.js"/>
   </ItemGroup>
 
 

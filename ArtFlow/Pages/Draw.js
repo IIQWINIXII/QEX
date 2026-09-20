@@ -240,6 +240,7 @@ export function syncLayers(ids, activeId, opacity, blendMode) {
 
 /* ============================================================
  *  Рисование (в активный слой)
+ *  Рисование
  * ============================================================ */
 
 function toCanvas(clientX, clientY) {
@@ -398,4 +399,78 @@ export function dispose() {
     panX = 0;
     panY = 0;
     wheelHandler = null;
+}
+
+/* ============================================================
+ *  Файловые операции (проект .artflow)
+ * ============================================================ */
+
+// Превью всего холста — canvasEl уже содержит composite() (фон + видимые слои)
+export function exportPreview() {
+    if (!canvasEl) return '';
+    return canvasEl.toDataURL('image/png');
+}
+
+// { layerId: dataUrl } для каждого слоя
+export function exportLayers() {
+    const result = {};
+    for (const layer of layers) {
+        if (!layer || !layer.canvas) continue;
+        result[layer.id] = layer.canvas.toDataURL('image/png');
+    }
+    return result;
+}
+
+// dict: { layerId: base64Png }
+export async function loadLayers(dict) {
+    const promises = [];
+    for (const id in dict) {
+        const layer = layers.find(l => l.id === id);
+        if (!layer) continue;
+
+        promises.push(new Promise((resolve) => {
+            const img = new Image();
+            img.onload = () => {
+                const lctx = layer.canvas.getContext('2d');
+                lctx.clearRect(0, 0, layer.canvas.width, layer.canvas.height);
+                lctx.drawImage(img, 0, 0);
+                resolve();
+            };
+            img.onerror = () => resolve();
+            img.src = 'data:image/png;base64,' + dict[id];
+        }));
+    }
+    await Promise.all(promises);
+    composite();
+}
+
+// ---------- Файловый ввод/вывод ----------
+
+export function readFileAsBase64(input) {
+    return new Promise((resolve, reject) => {
+        const file = input.files && input.files[0];
+        if (!file) return resolve('');
+        const reader = new FileReader();
+        reader.onload = () => {
+            const s = reader.result.toString();
+            const idx = s.indexOf(',');
+            resolve(idx >= 0 ? s.substring(idx + 1) : s);
+        };
+        reader.onerror = () => reject('read error');
+        reader.readAsDataURL(file);
+    });
+}
+
+export function downloadBase64(fileName, base64) {
+    const bin = atob(base64);
+    const len = bin.length;
+    const buf = new Uint8Array(len);
+    for (let i = 0; i < len; i++) buf[i] = bin.charCodeAt(i);
+    const blob = new Blob([buf], { type: 'application/octet-stream' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
 }
