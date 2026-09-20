@@ -1,5 +1,6 @@
 ﻿@* Components/Draw.razor *@
 @using ArtFlow.Classes
+@using ArtFlow.Classes.Project
 @using ArtFlow.Pages
 @using Microsoft.JSInterop
 @inject IJSRuntime JS
@@ -7,6 +8,13 @@
 <div class="draw-app">
     <div class="toolbar">
         <button @onclick="@(() => _showSettings = true)" title="Настройки холста">⚙️ Холст</button>
+        <button @onclick="SaveProject">📁 Сохранить проект</button>
+        <button @onclick="OpenProject">📂 Открыть проект</button>
+        <input type="file"
+               accept=".artflow"
+               @ref="_fileInput"
+               style="display:none"
+               @onchange="OnFilePicked" />
         <button @onclick="Save">💾 Сохранить PNG</button>
         <button @onclick="Clear">🗑 Очистить</button>
 
@@ -136,6 +144,7 @@
 
     private List<LayerInfo> _layers = new();
     private string? _activeLayerId;
+    private ElementReference _fileInput;
 
     protected override void OnInitialized()
     {
@@ -144,6 +153,8 @@
         _activeLayerId = first.Id;
     }
 
+    // ---------- Настройки холста ----------
+
     private async Task OnSettingsApplied(CanvasSettings s)
     {
         _settings = s;
@@ -151,7 +162,8 @@
 
         if (_canvasRef?.Module is not null)
         {
-            await _canvasRef.Module.InvokeVoidAsync("resize", s.Width, s.Height, s.Background);
+            await _canvasRef.Module.InvokeVoidAsync(
+                "resize", s.Width, s.Height, s.Background);
             await SyncLayersAfterResize();
             await SyncSettings();
         }
@@ -164,6 +176,8 @@
         await _canvasRef.Module.InvokeVoidAsync("reinitLayers", ids, _activeLayerId);
         await SyncAllLayers();
     }
+
+    // ---------- Инструмент / цвет / размер ----------
 
     private async Task SyncSettings()
     {
@@ -192,6 +206,8 @@
         await SyncSettings();
     }
 
+    // ---------- Мышь ----------
+
     private async Task OnPointerDown((double X, double Y) p)
     {
         if (_canvasRef?.Module is null) return;
@@ -210,6 +226,8 @@
         await _canvasRef.Module.InvokeVoidAsync("end");
     }
 
+    // ---------- Очистка / PNG ----------
+
     private async Task Clear()
     {
         if (_canvasRef?.Module is null) return;
@@ -226,7 +244,170 @@
             $"a.download='art.png';a.click();");
     }
 
+    // ---------- Сохранение проекта ----------
+
+    private async Task SaveProject()
+    {
+        if (_canvasRef?.Module is null)
+        {
+            await JS.InvokeVoidAsync("alert", "Canvas не готов");
+            return;
+        }
+
+        try
+        {
+            var project = new ArtFlowProject
+            {
+                Canvas = new ProjectCanvas
+                {
+                    Width = _settings.Width,
+                    Height = _settings.Height,
+                    Background = _settings.Background
+                },
+                Tool = _tool,
+                Color = _color,
+                Size = _size,
+                ActiveLayerId = _activeLayerId,
+                Layers = _layers.Select(l => new ProjectLayer
+                {
+                    Id = l.Id,
+                    Name = l.Name,
+                    Visible = l.Visible,
+                    Opacity = l.Opacity,
+                    BlendMode = l.BlendMode,
+                    File = $"layers/{l.Id}.png"
+                }).ToList()
+            };
+
+            var layerJson = await _canvasRef.Module
+                .InvokeAsync<Dictionary<string, string>>("exportLayers");
+
+            var layerBytes = new Dictionary<string, byte[]>();
+            foreach (var kv in layerJson)
+            {
+                layerBytes[kv.Key] = Convert.FromBase64String(StripDataUrl(kv.Value));
+            }
+
+            var previewDataUrl = await _canvasRef.Module
+                .InvokeAsync<string>("exportPreview");
+            var previewPng = Convert.FromBase64String(StripDataUrl(previewDataUrl));
+
+            using var ms = new MemoryStream();
+            await ProjectFileService.SaveAsync(ms, project, layerBytes, previewPng);
+            var fileBytes = ms.ToArray();
+
+            var fileName = ProjectFileService.SuggestFileName(project);
+            var base64 = Convert.ToBase64String(fileBytes);
+            await _canvasRef.Module.InvokeVoidAsync("downloadBase64", fileName, base64);
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("console.error", $"[SaveProject] {ex}");
+            await JS.InvokeVoidAsync("alert", $"Ошибка сохранения: {ex.Message}");
+        }
+    }
+
+    // ---------- Открытие проекта ----------
+
+    private async Task OpenProject()
+    {
+        await JS.InvokeVoidAsync("eval",
+            "document.querySelector('input[type=file][accept=\".artflow\"]').click()");
+    }
+
+    private async Task OnFilePicked(ChangeEventArgs e)
+    {
+        try
+        {
+            if (_canvasRef?.Module is null) return;
+
+            var base64 = await _canvasRef.Module
+                .InvokeAsync<string>("readFileAsBase64", _fileInput);
+
+            if (string.IsNullOrEmpty(base64)) return;
+
+            var bytes = Convert.FromBase64String(base64);
+            using var ms = new MemoryStream(bytes);
+
+            var load = await ProjectFileService.LoadAsync(ms);
+
+            _settings = new CanvasSettings
+            {
+                Width = load.Project.Canvas.Width,
+                Height = load.Project.Canvas.Height,
+                Background = load.Project.Canvas.Background
+            };
+            _tool = load.Project.Tool;
+            _color = load.Project.Color;
+            _size = load.Project.Size;
+
+            _layers = load.Project.Layers.Select(p => new LayerInfo
+            {
+                Id = p.Id,
+                Name = p.Name,
+                Visible = p.Visible,
+                Opacity = p.Opacity,
+                BlendMode = p.BlendMode
+            }).ToList();
+
+            _activeLayerId = load.Project.ActiveLayerId ?? _layers.FirstOrDefault()?.Id;
+
+            StateHasChanged();
+
+            // Пересоздаём канвас под новые размеры
+            await _canvasRef.Module.InvokeVoidAsync(
+                "resize", _settings.Width, _settings.Height, _settings.Background);
+
+            // Пересоздаём слои в JS по списку из проекта
+            var ids = _layers.Select(l => l.Id).ToArray();
+            await _canvasRef.Module.InvokeVoidAsync("reinitLayers", ids, _activeLayerId);
+
+            // Синхронизируем props каждого слоя (visible / opacity / blendMode)
+            foreach (var l in _layers)
+            {
+                await _canvasRef.Module.InvokeVoidAsync(
+                    "setLayerVisible", l.Id, l.Visible);
+            }
+
+            // Синхронизируем активный слой и его props
+            await SyncAllLayers();
+
+            // Заливаем PNG в слои
+            var dict = load.LayerPngBytes.ToDictionary(
+                kv => kv.Key,
+                kv => Convert.ToBase64String(kv.Value));
+
+            await _canvasRef.Module.InvokeVoidAsync("loadLayers", dict);
+
+            await SyncSettings();
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("console.error", $"[OnFilePicked] {ex}");
+            await JS.InvokeVoidAsync("alert", $"Ошибка открытия: {ex.Message}");
+        }
+        finally
+        {
+            try
+            {
+                await JS.InvokeVoidAsync("eval",
+                    "document.querySelector('input[type=file][accept=\".artflow\"]').value = ''");
+            }
+            catch { }
+        }
+    }
+
+    private static string StripDataUrl(string dataUrl)
+    {
+        var idx = dataUrl.IndexOf(',');
+        return idx >= 0 ? dataUrl[(idx + 1)..] : dataUrl;
+    }
+
+    // ---------- Закрытие ----------
+
     private async Task HandleClose() => await OnClose.InvokeAsync();
+
+    // ---------- Слои ----------
 
     private int ActiveLayerIndex =>
         _activeLayerId is null ? -1 : _layers.FindIndex(l => l.Id == _activeLayerId);
@@ -305,7 +486,8 @@
                     {
                         _layers[idx].Visible = v;
                         if (_canvasRef?.Module is not null)
-                            await _canvasRef.Module.InvokeVoidAsync("setLayerVisible", _layers[idx].Id, v);
+                            await _canvasRef.Module.InvokeVoidAsync(
+                                "setLayerVisible", _layers[idx].Id, v);
                     }
                     break;
                 }
@@ -349,12 +531,14 @@
         if (_canvasRef?.Module is null) return;
 
         var ids = _layers.Select(l => l.Id).ToArray();
-        var active = _layers.FirstOrDefault(l => l.Id == _activeLayerId) ?? _layers.LastOrDefault();
+        var active = _layers.FirstOrDefault(l => l.Id == _activeLayerId)
+                     ?? _layers.LastOrDefault();
 
         var opacity = active?.Opacity ?? 1.0;
         var blend = active?.BlendMode ?? "source-over";
 
-        await _canvasRef.Module.InvokeVoidAsync("syncLayers", ids, active?.Id, opacity, blend);
+        await _canvasRef.Module.InvokeVoidAsync(
+            "syncLayers", ids, active?.Id, opacity, blend);
     }
 
     private async Task SyncActiveProps()
@@ -362,6 +546,7 @@
         var i = ActiveLayerIndex;
         if (i < 0 || _canvasRef?.Module is null) return;
         var a = _layers[i];
-        await _canvasRef.Module.InvokeVoidAsync("setActiveLayerProps", a.Opacity, a.BlendMode);
+        await _canvasRef.Module.InvokeVoidAsync(
+            "setActiveLayerProps", a.Opacity, a.BlendMode);
     }
 }
