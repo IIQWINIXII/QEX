@@ -26,17 +26,20 @@
                     SettingsChanged="SyncSettings" />
 
         <div class="right-dock">
-            <!-- Цвет и размер теперь аккуратно сгруппированы внутри ColorPanel -->
-            <ColorPanel Selected="@_color"
-                        SelectedChanged="OnColorChanged"
-                        Size="@_size"
-                        SizeChanged="OnSizeChanged" />
+
+            <div class="color-panel-host">
+                <ColorPanel Selected="@_color"
+                            SelectedChanged="OnColorChanged"
+                            Size="@_size"
+                            SizeChanged="OnSizeChanged" />
+            </div>
 
             <div class="layers-wrap">
                 <LayersPanel Layers="_layers"
                              ActiveId="@_activeLayerId"
                              ActionRequested="OnLayerAction" />
             </div>
+
         </div>
     </div>
 
@@ -90,10 +93,18 @@
         flex: 1 1 auto;
         min-height: 0;
         display: grid;
-        grid-template-columns: 56px 1fr 280px;
+        grid-template-columns: 56px 1fr 340px;
         align-items: stretch;
         background: #e9ecef;
         overflow: hidden;
+    }
+
+    .color-panel-host {
+        flex: 0 0 auto;
+        padding: 12px;
+        background: #ffffff;
+        border-bottom: 1px solid #ddd;
+        overflow: visible;
     }
 
     .right-dock {

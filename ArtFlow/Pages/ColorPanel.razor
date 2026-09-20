@@ -43,31 +43,32 @@
         display: flex;
         flex-direction: column;
         gap: 12px;
-        padding: 12px;
-        user-select: none;
-        box-sizing: border-box;
         width: 100%;
-        max-width: 280px;
+        height: auto;
+        padding: 12px;
+        box-sizing: border-box;
+        user-select: none;
     }
 
     .wheel-container {
+        width: 100%;
+        height: 240px;
         display: flex;
         justify-content: center;
         align-items: center;
-        width: 100%;
+        flex-shrink: 0;
         position: relative;
-        margin: 0 auto;
     }
 
     .color-wheel {
         display: block;
+        width: 220px;
+        height: 220px;
+        flex-shrink: 0;
         cursor: crosshair;
-        border-radius: 50%;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
         touch-action: none;
-        width: 220px !important;
-        height: 220px !important;
-        max-width: 100%;
+        border-radius: 50%;
+        box-shadow: 0 2px 8px rgba(0,0,0,.15);
     }
 
     .preview-row {
@@ -222,12 +223,18 @@
 
         if (dist > InnerR)
         {
-            var angle = Math.Atan2(ny, nx) * 180.0 / Math.PI;
-            _h = (angle + 360.0) % 360.0;
+            var angle =
+                Math.Atan2(ny, nx)
+                * 180.0
+                / Math.PI;
+
+            _h =
+                (angle + 360.0)
+                % 360.0;
         }
         else
         {
-            UpdateSvFromTriangle(nx, ny);
+            UpdateSvFromSquare(nx, ny);
         }
 
         if (_module is not null)
@@ -235,37 +242,29 @@
 
         await EmitChanged();
     }
-
-    private void UpdateSvFromTriangle(double nx, double ny)
+    private void UpdateSvFromSquare(double nx, double ny)
     {
         const double InnerR = 0.78;
-        double tr = InnerR * 0.98;
-        double cos30 = Math.Cos(Math.PI / 6);
-        double sin30 = 0.5;
 
-        double ax = 0, ay = -tr;
-        double bx = -tr * cos30, by = tr * sin30;
-        double cx = tr * cos30, cy = tr * sin30;
+        double squareSize = InnerR * 1.35;
 
-        double d = (by - cy) * (ax - cx) + (cx - bx) * (ay - cy);
-        if (Math.Abs(d) < 1e-9) return;
+        double minX = -squareSize / 2;
+        double maxX = squareSize / 2;
 
-        double wa = ((by - cy) * (nx - cx) + (cx - bx) * (ny - cy)) / d;
-        double wb = ((cy - ay) * (nx - cx) + (ax - cx) * (ny - cy)) / d;
-        double wc = 1 - wa - wb;
+        double minY = -squareSize / 2;
+        double maxY = squareSize / 2;
 
-        if (wa < 0 || wb < 0 || wc < 0)
-        {
-            wa = Math.Max(0, wa);
-            wb = Math.Max(0, wb);
-            wc = Math.Max(0, wc);
-            var sum = wa + wb + wc;
-            if (sum <= 0) return;
-            wa /= sum; wb /= sum; wc /= sum;
-        }
+        double x = Math.Clamp(nx, minX, maxX);
+        double y = Math.Clamp(ny, minY, maxY);
 
-        _s = Math.Clamp(wa * 100.0, 0, 100);
-        _v = Math.Clamp((wa + wb) * 100.0, 0, 100);
+        _s =
+            ((x - minX) / squareSize)
+            * 100.0;
+
+        _v =
+            (1.0 -
+            ((y - minY) / squareSize))
+            * 100.0;
     }
 
     private async Task OnHInput(ChangeEventArgs e)
